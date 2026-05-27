@@ -1,0 +1,4 @@
+Для запуска Research проекта, и корретной работы ноутбуков.
+Положите .CSV файлы датасета, в эту директорию.
+
+Скачать их можно отсюда: https://github.com/FlowFrontiers/CyberML-DataQuality/tree/main/4-NFS-2023/NFS-2023-nTE/datasets

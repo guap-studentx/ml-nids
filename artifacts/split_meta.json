@@ -1,0 +1,8 @@
+{
+  "n_train": 1477791,
+  "n_test": 633340,
+  "anomaly_rate_train": 0.23630202105710482,
+  "anomaly_rate_test": 0.23630119682950707,
+  "random_state": 42,
+  "test_size": 0.3
+}

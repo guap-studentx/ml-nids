@@ -1,4 +1,11 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
+function defaultApiBaseUrl() {
+  if (typeof window === "undefined") {
+    return "http://localhost:8000/api/v1";
+  }
+  return `${window.location.protocol}//${window.location.hostname}:8000/api/v1`;
+}
+
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? defaultApiBaseUrl();
 export const WS_BASE_URL = API_BASE_URL.replace(/^http/, "ws");
 
 let accessToken = localStorage.getItem("ml_nids_token");

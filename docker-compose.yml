@@ -30,6 +30,7 @@ services:
       CAPTURES_DIR: /captures
       DEFAULT_MODEL_ID: ${DEFAULT_MODEL_ID}
       AGENT_OFFLINE_AFTER_SECONDS: ${AGENT_OFFLINE_AFTER_SECONDS}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
     volumes:
       - ./artifacts:/models:ro
       - uploads_volume:/uploads

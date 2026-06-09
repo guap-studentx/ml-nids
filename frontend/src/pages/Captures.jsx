@@ -10,8 +10,10 @@ import Button from "../components/Button";
 import Input from "../components/Input";
 import PageHeader from "../components/PageHeader";
 import Spinner from "../components/Spinner";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Captures() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [captures, setCaptures] = useState([]);
   const [models, setModels] = useState([]);
@@ -85,7 +87,7 @@ export default function Captures() {
   async function handleUpload(event, form, uploadFn, label, resetForm) {
     event.preventDefault();
     if (!form.file || !form.modelId) {
-      setError(`Выберите ${label}-файл и модель`);
+      setError(t("Select a {label} file and a model", { label }));
       return;
     }
 
@@ -94,7 +96,7 @@ export default function Captures() {
     setIsUploading(true);
     try {
       const response = await uploadFn({ file: form.file, modelId: form.modelId, name: form.name });
-      setNotice(`Анализ ${label.toUpperCase()} запущен. Session ID: ${response.session_id}`);
+      setNotice(t("{label} analysis started. Session ID: {id}", { label: label.toUpperCase(), id: response.session_id }));
       resetForm();
       event.target.reset();
       await loadCaptures();
@@ -108,7 +110,7 @@ export default function Captures() {
   async function handleStartLive(event) {
     event.preventDefault();
     if (!liveForm.modelId || !liveForm.agentId || !liveForm.iface) {
-      setError("Выберите модель, online-агента и интерфейс");
+      setError(t("Select a model, online agent, and interface"));
       return;
     }
 
@@ -124,7 +126,7 @@ export default function Captures() {
         bpfFilter: liveForm.bpfFilter,
         durationSeconds: liveForm.durationSeconds,
       });
-      setNotice(`Live capture поставлен в очередь. Session ID: ${response.session_id}`);
+      setNotice(t("Live capture queued. Session ID: {id}", { id: response.session_id }));
       setLiveForm((current) => ({ ...current, name: "", bpfFilter: "" }));
       await loadCaptures();
     } catch (requestError) {
@@ -155,7 +157,7 @@ export default function Captures() {
     setDeletingId(capture.id);
     try {
       await deleteCapture(capture.id);
-      setNotice(`Capture ${capture.name ?? capture.source_filename ?? capture.id} удален`);
+      setNotice(t("Capture {name} deleted", { name: capture.name ?? capture.source_filename ?? capture.id }));
       await loadCaptures();
     } catch (requestError) {
       setError(requestError.message);
@@ -171,7 +173,7 @@ export default function Captures() {
     setStoppingId(capture.id);
     try {
       const response = await stopCapture(capture.id);
-      setNotice(`Stop requested for ${capture.name ?? capture.source_filename ?? capture.id}. Status: ${response.status}`);
+      setNotice(t("Stop requested for {name}. Status: {status}", { name: capture.name ?? capture.source_filename ?? capture.id, status: response.status }));
       await loadCaptures();
     } catch (requestError) {
       setError(requestError.message);
@@ -183,12 +185,12 @@ export default function Captures() {
   return (
     <>
       <PageHeader
-        title="Captures"
-        description={`История offline и live-сессий анализа. Всего: ${total}.`}
+        title={t("Captures")}
+        description={t("Offline and live analysis history. Total: {total}.", { total })}
         actions={
           <Button onClick={loadCaptures}>
             <RefreshCw size={16} />
-            Refresh
+            {t("Refresh")}
           </Button>
         }
       />
@@ -201,17 +203,19 @@ export default function Captures() {
             isStarting={isStartingLive}
             onChange={setLiveForm}
             onSubmit={handleStartLive}
+            t={t}
           />
           <UploadForm
-            title="Offline CSV analysis"
-            description="Загрузка flow-таблицы NFStream-формата для инференса выбранной моделью."
+            title={t("Offline CSV analysis")}
+            description={t("Upload an NFStream-format flow table for inference with the selected model.")}
             accept=".csv,text/csv"
-            fileLabel="CSV file"
-            placeholder="Например, lab-portscan-xgboost"
+            fileLabel="CSV"
+            placeholder={t("For example, lab-portscan-xgboost")}
             form={csvForm}
             models={models}
             isUploading={isUploading}
             onChange={setCsvForm}
+            t={t}
             onSubmit={(event) =>
               handleUpload(event, csvForm, uploadCsvCapture, "csv", () =>
                 setCsvForm((current) => ({ name: "", modelId: current.modelId, file: null })),
@@ -219,15 +223,16 @@ export default function Captures() {
             }
           />
           <UploadForm
-            title="Offline PCAP analysis"
-            description="Загрузка PCAP/PCAPNG: backend извлечет flow через NFStream с настройками исследовательской части."
+            title={t("Offline PCAP analysis")}
+            description={t("Upload PCAP/PCAPNG: backend extracts flows through NFStream using research settings.")}
             accept=".pcap,.pcapng,application/vnd.tcpdump.pcap"
-            fileLabel="PCAP file"
-            placeholder="Например, attack-window-01"
+            fileLabel="PCAP"
+            placeholder={t("For example, attack-window-01")}
             form={pcapForm}
             models={models}
             isUploading={isUploading}
             onChange={setPcapForm}
+            t={t}
             onSubmit={(event) =>
               handleUpload(event, pcapForm, uploadPcapCapture, "pcap", () =>
                 setPcapForm((current) => ({ name: "", modelId: current.modelId, file: null })),
@@ -250,13 +255,13 @@ export default function Captures() {
               <table className="w-full min-w-[860px] text-left text-sm">
                 <thead className="border-b border-line bg-panel text-xs uppercase text-muted">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Name</th>
-                    <th className="px-4 py-3 font-semibold">Mode</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">Flows</th>
-                    <th className="px-4 py-3 font-semibold">Anomalies</th>
-                    <th className="px-4 py-3 font-semibold">Finished</th>
-                    <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                    <th className="px-4 py-3 font-semibold">{t("Name")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Mode")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Status")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Flows")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Anomalies")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Finished")}</th>
+                    <th className="px-4 py-3 text-right font-semibold">{t("Actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -270,9 +275,9 @@ export default function Captures() {
                         <div className="font-medium text-ink">{capture.name ?? capture.source_filename ?? capture.id}</div>
                         {capture.error_message ? <div className="mt-1 text-xs text-danger">{capture.error_message}</div> : null}
                       </td>
-                      <td className="px-4 py-3 text-muted">{capture.mode}</td>
+                      <td className="px-4 py-3 text-muted">{t(capture.mode)}</td>
                       <td className="px-4 py-3">
-                        <Badge tone={statusTone(capture.status)}>{capture.status}</Badge>
+                        <Badge tone={statusTone(capture.status)}>{t(capture.status)}</Badge>
                       </td>
                       <td className="px-4 py-3 text-muted">{capture.flows_total}</td>
                       <td className="px-4 py-3 text-muted">{capture.flows_anomaly}</td>
@@ -282,7 +287,7 @@ export default function Captures() {
                           {capture.mode === "live" && ["pending", "running", "stopping"].includes(capture.status) ? (
                             <Button disabled={stoppingId === capture.id || capture.status === "stopping"} onClick={(event) => handleStopCapture(event, capture)}>
                               <Square size={16} />
-                              Stop
+                              {t("Stop")}
                             </Button>
                           ) : null}
                           <Button
@@ -291,7 +296,7 @@ export default function Captures() {
                             onClick={(event) => handleDeleteCapture(event, capture)}
                           >
                             <Trash2 size={16} />
-                            Delete
+                            {t("Delete")}
                           </Button>
                         </div>
                       </td>
@@ -300,7 +305,7 @@ export default function Captures() {
                   {captures.length === 0 ? (
                     <tr>
                       <td className="px-4 py-6 text-muted" colSpan="7">
-                        Сессий пока нет.
+                        {t("No sessions yet.")}
                       </td>
                     </tr>
                   ) : null}
@@ -325,6 +330,7 @@ function UploadForm({
   isUploading,
   onChange,
   onSubmit,
+  t,
 }) {
   function updateForm(values) {
     onChange((current) => ({ ...current, ...values }));
@@ -337,9 +343,9 @@ function UploadForm({
         <p className="text-sm text-muted">{description}</p>
       </div>
       <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1.2fr_auto] lg:items-end">
-        <Input label="Session name" value={form.name} onChange={(event) => updateForm({ name: event.target.value })} placeholder={placeholder} />
+        <Input label={t("Session name")} value={form.name} onChange={(event) => updateForm({ name: event.target.value })} placeholder={placeholder} />
         <label className="grid gap-1.5 text-sm text-ink">
-          <span className="font-medium">Model</span>
+          <span className="font-medium">{t("Model")}</span>
           <select
             className="h-10 rounded-md border border-line bg-white px-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
             value={form.modelId}
@@ -348,7 +354,7 @@ function UploadForm({
             {models.map((model) => (
               <option key={model.id} value={model.id}>
                 {model.display_name}
-                {model.is_default ? " · default" : ""}
+                {model.is_default ? ` · ${t("Default").toLowerCase()}` : ""}
               </option>
             ))}
           </select>
@@ -364,14 +370,14 @@ function UploadForm({
         </label>
         <Button type="submit" variant="primary" disabled={isUploading || models.length === 0}>
           <Upload size={16} />
-          {isUploading ? "Uploading" : "Upload"}
+          {isUploading ? t("Uploading") : t("Upload")}
         </Button>
       </div>
     </form>
   );
 }
 
-function LiveCaptureForm({ form, models, agents, isStarting, onChange, onSubmit }) {
+function LiveCaptureForm({ form, models, agents, isStarting, onChange, onSubmit, t }) {
   const onlineAgents = agents.filter((agent) => agent.status === "online");
   const selectedAgent = agents.find((agent) => agent.id === form.agentId);
   const ifaces = selectedAgent?.available_ifaces ?? [];
@@ -388,18 +394,18 @@ function LiveCaptureForm({ form, models, agents, isStarting, onChange, onSubmit 
   return (
     <form className="grid gap-4 rounded-lg border border-line bg-white p-4 2xl:col-span-2" onSubmit={onSubmit}>
       <div className="flex flex-col gap-1">
-        <h2 className="text-base font-semibold text-ink">Live capture</h2>
-        <p className="text-sm text-muted">Команда online-агенту: захват PCAP на выбранном интерфейсе и анализ моделью.</p>
+        <h2 className="text-base font-semibold text-ink">{t("Live capture")}</h2>
+        <p className="text-sm text-muted">{t("Command to an online agent: capture traffic on a selected interface and analyze it with a model.")}</p>
       </div>
       <div className="grid gap-3 xl:grid-cols-[1.1fr_1fr_1fr_1fr_0.7fr_auto] xl:items-end">
         <Input
-          label="Session name"
+          label={t("Session name")}
           value={form.name}
           onChange={(event) => updateForm({ name: event.target.value })}
-          placeholder="Например, live-office-traffic"
+          placeholder={t("For example, live-office-traffic")}
         />
         <label className="grid gap-1.5 text-sm text-ink">
-          <span className="font-medium">Model</span>
+          <span className="font-medium">{t("Model")}</span>
           <select
             className="h-10 rounded-md border border-line bg-white px-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
             value={form.modelId}
@@ -408,19 +414,19 @@ function LiveCaptureForm({ form, models, agents, isStarting, onChange, onSubmit 
             {models.map((model) => (
               <option key={model.id} value={model.id}>
                 {model.display_name}
-                {model.is_default ? " · default" : ""}
+                {model.is_default ? ` · ${t("Default").toLowerCase()}` : ""}
               </option>
             ))}
           </select>
         </label>
         <label className="grid gap-1.5 text-sm text-ink">
-          <span className="font-medium">Agent</span>
+          <span className="font-medium">{t("Agent")}</span>
           <select
             className="h-10 rounded-md border border-line bg-white px-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
             value={form.agentId}
             onChange={(event) => handleAgentChange(event.target.value)}
           >
-            {onlineAgents.length === 0 ? <option value="">No online agents</option> : null}
+            {onlineAgents.length === 0 ? <option value="">{t("No online agents")}</option> : null}
             {onlineAgents.map((agent) => (
               <option key={agent.id} value={agent.id}>
                 {agent.name}
@@ -429,13 +435,13 @@ function LiveCaptureForm({ form, models, agents, isStarting, onChange, onSubmit 
           </select>
         </label>
         <label className="grid gap-1.5 text-sm text-ink">
-          <span className="font-medium">Interface</span>
+          <span className="font-medium">{t("Interface")}</span>
           <select
             className="h-10 rounded-md border border-line bg-white px-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
             value={form.iface}
             onChange={(event) => updateForm({ iface: event.target.value })}
           >
-            {ifaces.length === 0 ? <option value="">No interfaces</option> : null}
+            {ifaces.length === 0 ? <option value="">{t("No interfaces")}</option> : null}
             {ifaces.map((iface) => (
               <option key={iface} value={iface}>
                 {iface}
@@ -444,7 +450,7 @@ function LiveCaptureForm({ form, models, agents, isStarting, onChange, onSubmit 
           </select>
         </label>
         <Input
-          label="Duration, sec"
+          label={t("Duration, sec")}
           type="number"
           min="1"
           max="3600"
@@ -453,14 +459,14 @@ function LiveCaptureForm({ form, models, agents, isStarting, onChange, onSubmit 
         />
         <Button type="submit" variant="primary" disabled={isStarting || models.length === 0 || !form.agentId || !form.iface}>
           <Play size={16} />
-          {isStarting ? "Starting" : "Start"}
+          {isStarting ? t("Starting") : t("Start")}
         </Button>
       </div>
       <Input
-        label="BPF filter"
+        label={t("BPF filter")}
         value={form.bpfFilter}
         onChange={(event) => updateForm({ bpfFilter: event.target.value })}
-        placeholder="Например, tcp port 443"
+        placeholder={t("For example, tcp port 443")}
       />
     </form>
   );

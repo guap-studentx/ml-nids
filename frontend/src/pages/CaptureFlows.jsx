@@ -9,6 +9,7 @@ import FlowDetailModal from "../components/FlowDetailModal";
 import Input from "../components/Input";
 import PageHeader from "../components/PageHeader";
 import Spinner from "../components/Spinner";
+import { useLanguage } from "../context/LanguageContext";
 
 const pageSize = 50;
 
@@ -30,6 +31,7 @@ function endpointLabel(flow) {
 }
 
 export default function CaptureFlows() {
+  const { t } = useLanguage();
   const { captureId } = useParams();
   const [flows, setFlows] = useState([]);
   const [total, setTotal] = useState(0);
@@ -109,19 +111,19 @@ export default function CaptureFlows() {
   return (
     <>
       <PageHeader
-        title="Capture flows"
-        description={`${captureId} · ${total} записей`}
+        title={t("Capture flows")}
+        description={t("{id} · {total} records", { id: captureId, total })}
         actions={
           <>
             <Link to={`/captures/${captureId}`}>
               <Button>
                 <ArrowLeft size={16} />
-                Back
+                {t("Back")}
               </Button>
             </Link>
             <Button onClick={loadFlows}>
               <RefreshCw size={16} />
-              Refresh
+              {t("Refresh")}
             </Button>
           </>
         }
@@ -131,29 +133,29 @@ export default function CaptureFlows() {
         <form className="rounded-lg border border-line bg-white p-4" onSubmit={handleSubmit}>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[160px_160px_1fr_1fr_140px_auto] xl:items-end">
             <label className="grid gap-1.5 text-sm text-ink">
-              <span className="font-medium">Prediction</span>
+              <span className="font-medium">{t("Prediction")}</span>
               <select
                 className="h-10 rounded-md border border-line bg-white px-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
                 value={draftFilters.prediction}
                 onChange={(event) => handleFilterChange("prediction", event.target.value)}
               >
-                <option value="">All</option>
-                <option value="1">Anomaly</option>
-                <option value="0">Benign</option>
+                <option value="">{t("All")}</option>
+                <option value="1">{t("Anomaly")}</option>
+                <option value="0">{t("Benign")}</option>
               </select>
             </label>
             <Input
-              label="Min score"
+              label={t("Min score")}
               type="number"
               min="0"
               step="0.0001"
               value={draftFilters.min_score}
               onChange={(event) => handleFilterChange("min_score", event.target.value)}
             />
-            <Input label="Source IP" value={draftFilters.src_ip} onChange={(event) => handleFilterChange("src_ip", event.target.value)} />
-            <Input label="Destination IP" value={draftFilters.dst_ip} onChange={(event) => handleFilterChange("dst_ip", event.target.value)} />
+            <Input label={t("Source IP")} value={draftFilters.src_ip} onChange={(event) => handleFilterChange("src_ip", event.target.value)} />
+            <Input label={t("Destination IP")} value={draftFilters.dst_ip} onChange={(event) => handleFilterChange("dst_ip", event.target.value)} />
             <Input
-              label="Protocol"
+              label={t("Protocol")}
               type="number"
               min="0"
               max="255"
@@ -162,7 +164,7 @@ export default function CaptureFlows() {
             />
             <Button type="submit" variant="primary">
               <Search size={16} />
-              Apply
+              {t("Apply")}
             </Button>
           </div>
         </form>
@@ -181,14 +183,14 @@ export default function CaptureFlows() {
                 <table className="w-full min-w-[1120px] text-left text-sm">
                   <thead className="border-b border-line bg-panel text-xs uppercase text-muted">
                     <tr>
-                      <th className="px-4 py-3 font-semibold">Timestamp</th>
-                      <th className="px-4 py-3 font-semibold">Endpoint</th>
-                      <th className="px-4 py-3 font-semibold">Protocol</th>
-                      <th className="px-4 py-3 font-semibold">Duration ms</th>
-                      <th className="px-4 py-3 font-semibold">Packets</th>
-                      <th className="px-4 py-3 font-semibold">Bytes</th>
-                      <th className="px-4 py-3 font-semibold">Score</th>
-                      <th className="px-4 py-3 font-semibold">Prediction</th>
+                      <th className="px-4 py-3 font-semibold">{t("Timestamp")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Endpoint")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Protocol")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Duration ms")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Packets")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Bytes")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Score")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Prediction")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
@@ -209,7 +211,7 @@ export default function CaptureFlows() {
                     {flows.length === 0 ? (
                       <tr>
                         <td className="px-4 py-6 text-muted" colSpan="8">
-                          Flow не найдены.
+                          {t("No flows found.")}
                         </td>
                       </tr>
                     ) : null}
@@ -218,15 +220,15 @@ export default function CaptureFlows() {
               </div>
               <div className="flex flex-col gap-3 border-t border-line px-4 py-3 text-sm text-muted md:flex-row md:items-center md:justify-between">
                 <div>
-                  Page {page} of {totalPages}
+                  {t("Page {page} of {totalPages}", { page, totalPages })}
                 </div>
                 <div className="flex gap-2">
                   <Button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - pageSize))}>
                     <ChevronLeft size={16} />
-                    Previous
+                    {t("Previous")}
                   </Button>
                   <Button disabled={offset + pageSize >= total} onClick={() => setOffset(offset + pageSize)}>
-                    Next
+                    {t("Next")}
                     <ChevronRight size={16} />
                   </Button>
                 </div>

@@ -6,8 +6,10 @@ import Badge from "../components/Badge";
 import Button from "../components/Button";
 import PageHeader from "../components/PageHeader";
 import Spinner from "../components/Spinner";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Reports() {
+  const { t } = useLanguage();
   const [reports, setReports] = useState([]);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState("");
@@ -53,12 +55,12 @@ export default function Reports() {
   return (
     <>
       <PageHeader
-        title="Reports"
-        description={`Сгенерированные отчеты анализа. Всего: ${total}.`}
+        title={t("Reports")}
+        description={t("Generated analysis reports. Total: {total}.", { total })}
         actions={
           <Button onClick={loadReports}>
             <RefreshCw size={16} />
-            Refresh
+            {t("Refresh")}
           </Button>
         }
       />
@@ -75,12 +77,12 @@ export default function Reports() {
               <table className="w-full min-w-[860px] text-left text-sm">
                 <thead className="border-b border-line bg-panel text-xs uppercase text-muted">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Report</th>
-                    <th className="px-4 py-3 font-semibold">Capture</th>
-                    <th className="px-4 py-3 font-semibold">Format</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">Created</th>
-                    <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                    <th className="px-4 py-3 font-semibold">{t("Report")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Capture")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Format")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Status")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Created")}</th>
+                    <th className="px-4 py-3 text-right font-semibold">{t("Actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -90,14 +92,14 @@ export default function Reports() {
                       <td className="px-4 py-3 text-muted">{report.session_id}</td>
                       <td className="px-4 py-3 text-muted">{report.format.toUpperCase()}</td>
                       <td className="px-4 py-3">
-                        <Badge tone="green">{report.status}</Badge>
+                        <Badge tone="green">{t(report.status)}</Badge>
                       </td>
                       <td className="px-4 py-3 text-muted">{new Date(report.created_at).toLocaleString()}</td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end">
                           <Button disabled={downloadingId === report.id} onClick={() => handleDownload(report)}>
                             <Download size={16} />
-                            Download
+                            {t("Download")}
                           </Button>
                         </div>
                       </td>
@@ -106,7 +108,7 @@ export default function Reports() {
                   {reports.length === 0 ? (
                     <tr>
                       <td className="px-4 py-6 text-muted" colSpan="6">
-                        Отчетов пока нет.
+                        {t("No reports yet.")}
                       </td>
                     </tr>
                   ) : null}

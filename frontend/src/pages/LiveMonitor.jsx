@@ -10,6 +10,7 @@ import Button from "../components/Button";
 import Input from "../components/Input";
 import PageHeader from "../components/PageHeader";
 import Spinner from "../components/Spinner";
+import { useLanguage } from "../context/LanguageContext";
 
 function statusTone(status) {
   if (status === "completed" || status === "stopped") return "green";
@@ -31,6 +32,7 @@ function anomalyRate(session) {
 }
 
 export default function LiveMonitor() {
+  const { t } = useLanguage();
   const [sessions, setSessions] = useState([]);
   const [chunks, setChunks] = useState([]);
   const [models, setModels] = useState([]);
@@ -129,7 +131,7 @@ export default function LiveMonitor() {
   async function handleStart(event) {
     event.preventDefault();
     if (!form.modelId || !form.agentId || !form.iface) {
-      setError("Выберите модель, online-агента и интерфейс");
+      setError(t("Select a model, online agent, and interface"));
       return;
     }
 
@@ -146,7 +148,7 @@ export default function LiveMonitor() {
         chunkSeconds: form.chunkSeconds,
         durationSeconds: form.durationSeconds,
       });
-      setNotice(`Live session создана. ID: ${session.id}`);
+      setNotice(t("Live session created. ID: {id}", { id: session.id }));
       setSelectedSessionId(session.id);
       setForm((current) => ({ ...current, name: "", bpfFilter: "" }));
       await loadSessions({ silent: true });
@@ -163,7 +165,7 @@ export default function LiveMonitor() {
     setStoppingId(session.id);
     try {
       const response = await stopLiveSession(session.id);
-      setNotice(`Stop requested. Status: ${response.status}`);
+      setNotice(t("Stop requested for {name}. Status: {status}", { name: session.name || session.id, status: response.status }));
       await loadSessions({ silent: true });
     } catch (requestError) {
       setError(requestError.message);
@@ -178,7 +180,7 @@ export default function LiveMonitor() {
     setDeletingId(session.id);
     try {
       await deleteLiveSession(session.id);
-      setNotice(`Live session ${session.name || session.id} удалена`);
+      setNotice(t("Live session {name} deleted", { name: session.name || session.id }));
       setChunks([]);
       setSelectedSessionId("");
       await loadSessions({ silent: true });
@@ -192,12 +194,12 @@ export default function LiveMonitor() {
   return (
     <>
       <PageHeader
-        title="Live Monitor"
-        description="Непрерывный анализ трафика: агент отправляет короткие PCAP chunks, backend агрегирует результат."
+        title={t("Live Monitor")}
+        description={t("Continuous traffic analysis: the agent sends short PCAP chunks, backend aggregates the result.")}
         actions={
           <Button onClick={() => loadSessions()}>
             <RefreshCw size={16} />
-            Refresh
+            {t("Refresh")}
           </Button>
         }
       />
@@ -208,30 +210,30 @@ export default function LiveMonitor() {
               <Zap size={18} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-ink">Start continuous session</h2>
-              <p className="text-sm text-muted">Rolling capture с заданным размером chunk и общей длительностью.</p>
+              <h2 className="text-base font-semibold text-ink">{t("Start continuous session")}</h2>
+              <p className="text-sm text-muted">{t("Rolling capture with configured chunk size and total duration.")}</p>
             </div>
           </div>
           <div className="grid gap-3 xl:grid-cols-[1.1fr_1fr_1fr_1fr_0.7fr_0.7fr_auto] xl:items-end">
-            <Input label="Name" value={form.name} onChange={(event) => updateForm({ name: event.target.value })} placeholder="continuous-eth0" />
-            <Select label="Model" value={form.modelId} onChange={(event) => updateForm({ modelId: event.target.value })}>
+            <Input label={t("Name")} value={form.name} onChange={(event) => updateForm({ name: event.target.value })} placeholder="continuous-eth0" />
+            <Select label={t("Model")} value={form.modelId} onChange={(event) => updateForm({ modelId: event.target.value })}>
               {models.map((model) => (
                 <option key={model.id} value={model.id}>
                   {model.display_name}
-                  {model.is_default ? " · default" : ""}
+                  {model.is_default ? ` · ${t("Default").toLowerCase()}` : ""}
                 </option>
               ))}
             </Select>
-            <Select label="Agent" value={form.agentId} onChange={(event) => handleAgentChange(event.target.value)}>
-              {onlineAgents.length === 0 ? <option value="">No online agents</option> : null}
+            <Select label={t("Agent")} value={form.agentId} onChange={(event) => handleAgentChange(event.target.value)}>
+              {onlineAgents.length === 0 ? <option value="">{t("No online agents")}</option> : null}
               {onlineAgents.map((agent) => (
                 <option key={agent.id} value={agent.id}>
                   {agent.name}
                 </option>
               ))}
             </Select>
-            <Select label="Interface" value={form.iface} onChange={(event) => updateForm({ iface: event.target.value })}>
-              {ifaces.length === 0 ? <option value="">No interfaces</option> : null}
+            <Select label={t("Interface")} value={form.iface} onChange={(event) => updateForm({ iface: event.target.value })}>
+              {ifaces.length === 0 ? <option value="">{t("No interfaces")}</option> : null}
               {ifaces.map((iface) => (
                 <option key={iface} value={iface}>
                   {iface}
@@ -239,7 +241,7 @@ export default function LiveMonitor() {
               ))}
             </Select>
             <Input
-              label="Chunk, sec"
+              label={t("Chunk, sec")}
               type="number"
               min="5"
               max="300"
@@ -247,7 +249,7 @@ export default function LiveMonitor() {
               onChange={(event) => updateForm({ chunkSeconds: event.target.value })}
             />
             <Input
-              label="Duration, sec"
+              label={t("Duration, sec")}
               type="number"
               min="30"
               max="21600"
@@ -256,10 +258,10 @@ export default function LiveMonitor() {
             />
             <Button type="submit" variant="primary" disabled={isStarting || !form.agentId || !form.iface || !form.modelId}>
               <Zap size={16} />
-              {isStarting ? "Starting" : "Start"}
+              {isStarting ? t("Starting") : t("Start")}
             </Button>
           </div>
-          <Input label="BPF filter" value={form.bpfFilter} onChange={(event) => updateForm({ bpfFilter: event.target.value })} placeholder="tcp port 443" />
+          <Input label={t("BPF filter")} value={form.bpfFilter} onChange={(event) => updateForm({ bpfFilter: event.target.value })} placeholder="tcp port 443" />
         </form>
 
         {notice ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div> : null}
@@ -275,7 +277,7 @@ export default function LiveMonitor() {
           <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
             <div className="overflow-hidden rounded-lg border border-line bg-white">
               <div className="border-b border-line px-4 py-3">
-                <h2 className="text-base font-semibold text-ink">Sessions</h2>
+                <h2 className="text-base font-semibold text-ink">{t("Sessions")}</h2>
               </div>
               <div className="divide-y divide-line">
                 {sessions.map((session) => (
@@ -287,16 +289,16 @@ export default function LiveMonitor() {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0 truncate font-medium text-ink">{session.name || session.id}</div>
-                      <Badge tone={statusTone(session.status)}>{session.status}</Badge>
+                      <Badge tone={statusTone(session.status)}>{t(session.status)}</Badge>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-xs text-muted">
                       <span>{session.iface}</span>
-                      <span>{session.flows_total} flows</span>
-                      <span>{session.flows_anomaly} anomalies</span>
+                      <span>{session.flows_total} {t("Flows").toLowerCase()}</span>
+                      <span>{session.flows_anomaly} {t("Anomalies").toLowerCase()}</span>
                     </div>
                   </button>
                 ))}
-                {sessions.length === 0 ? <div className="px-4 py-6 text-sm text-muted">Live sessions пока нет.</div> : null}
+                {sessions.length === 0 ? <div className="px-4 py-6 text-sm text-muted">{t("No live sessions yet.")}</div> : null}
               </div>
             </div>
 
@@ -308,9 +310,10 @@ export default function LiveMonitor() {
                 deletingId={deletingId}
                 onStop={handleStop}
                 onDelete={handleDelete}
+                t={t}
               />
-              <ChunkTimeline chunks={timeline} />
-              <ChunksTable chunks={chunks} />
+              <ChunkTimeline chunks={timeline} t={t} />
+              <ChunksTable chunks={chunks} t={t} />
             </div>
           </div>
         ) : null}
@@ -333,11 +336,11 @@ function Select({ label, children, ...props }) {
   );
 }
 
-function SessionSummary({ session, chunks, stoppingId, deletingId, onStop, onDelete }) {
+function SessionSummary({ session, chunks, stoppingId, deletingId, onStop, onDelete, t }) {
   if (!session) {
     return (
       <div className="rounded-lg border border-line bg-white p-4 text-sm text-muted">
-        Выберите или запустите live session.
+        {t("Select or start a live session.")}
       </div>
     );
   }
@@ -350,30 +353,30 @@ function SessionSummary({ session, chunks, stoppingId, deletingId, onStop, onDel
           <div className="mt-1 text-xs text-muted">{session.id}</div>
         </div>
         <div className="flex gap-2">
-          <Badge tone={statusTone(session.status)}>{session.status}</Badge>
+          <Badge tone={statusTone(session.status)}>{t(session.status)}</Badge>
           {["pending", "running", "stopping"].includes(session.status) ? (
             <Button disabled={stoppingId === session.id || session.status === "stopping"} onClick={() => onStop(session)}>
               <Square size={16} />
-              Stop
+              {t("Stop")}
             </Button>
           ) : null}
           <Button variant="danger" disabled={deletingId === session.id} onClick={() => onDelete(session)}>
             <Trash2 size={16} />
-            Delete
+            {t("Delete")}
           </Button>
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-4">
-        <Metric label="Flows" value={session.flows_total} />
-        <Metric label="Anomalies" value={session.flows_anomaly} />
-        <Metric label="Rate" value={`${anomalyRate(session)}%`} />
-        <Metric label="Chunks" value={chunks.length} />
+        <Metric label={t("Flows")} value={session.flows_total} />
+        <Metric label={t("Anomalies")} value={session.flows_anomaly} />
+        <Metric label={t("Rate")} value={`${anomalyRate(session)}%`} />
+        <Metric label={t("Chunks")} value={chunks.length} />
       </div>
       <div className="grid gap-2 text-sm text-muted sm:grid-cols-2">
-        <div>Interface: <span className="text-ink">{session.iface}</span></div>
-        <div>Chunk: <span className="text-ink">{session.chunk_seconds}s</span></div>
-        <div>Started: <span className="text-ink">{formatDateTime(session.started_at)}</span></div>
-        <div>Finished: <span className="text-ink">{formatDateTime(session.finished_at)}</span></div>
+        <div>{t("Interface")}: <span className="text-ink">{session.iface}</span></div>
+        <div>{t("Chunk, sec")}: <span className="text-ink">{session.chunk_seconds}s</span></div>
+        <div>{t("Started")}: <span className="text-ink">{formatDateTime(session.started_at)}</span></div>
+        <div>{t("Finished")}: <span className="text-ink">{formatDateTime(session.finished_at)}</span></div>
       </div>
       {session.error_message ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-danger">{session.error_message}</div> : null}
     </div>
@@ -389,58 +392,58 @@ function Metric({ label, value }) {
   );
 }
 
-function ChunkTimeline({ chunks }) {
+function ChunkTimeline({ chunks, t }) {
   const maxValue = Math.max(1, ...chunks.map((chunk) => chunk.flows_anomaly));
   return (
     <div className="rounded-lg border border-line bg-white p-4">
-      <h2 className="text-base font-semibold text-ink">Recent anomaly chunks</h2>
+      <h2 className="text-base font-semibold text-ink">{t("Recent anomaly chunks")}</h2>
       <div className="mt-4 flex h-28 items-end gap-2">
         {chunks.map((chunk) => (
           <div key={chunk.id} className="flex min-w-8 flex-1 flex-col items-center gap-2">
             <div
               className="w-full rounded-t bg-accent"
               style={{ height: `${Math.max(6, (chunk.flows_anomaly / maxValue) * 96)}px` }}
-              title={`${chunk.flows_anomaly} anomalies`}
+              title={`${chunk.flows_anomaly} ${t("Anomalies").toLowerCase()}`}
             />
             <div className="text-[11px] text-muted">{chunk.chunk_index ?? "-"}</div>
           </div>
         ))}
-        {chunks.length === 0 ? <div className="self-center text-sm text-muted">Chunks пока нет.</div> : null}
+        {chunks.length === 0 ? <div className="self-center text-sm text-muted">{t("No chunks yet.")}</div> : null}
       </div>
     </div>
   );
 }
 
-function ChunksTable({ chunks }) {
+function ChunksTable({ chunks, t }) {
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-white">
       <div className="border-b border-line px-4 py-3">
-        <h2 className="text-base font-semibold text-ink">Chunks</h2>
+        <h2 className="text-base font-semibold text-ink">{t("Chunks")}</h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="border-b border-line bg-panel text-xs uppercase text-muted">
             <tr>
               <th className="px-4 py-3 font-semibold">#</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="px-4 py-3 font-semibold">Flows</th>
-              <th className="px-4 py-3 font-semibold">Anomalies</th>
-              <th className="px-4 py-3 font-semibold">Finished</th>
-              <th className="px-4 py-3 text-right font-semibold">Open</th>
+              <th className="px-4 py-3 font-semibold">{t("Status")}</th>
+              <th className="px-4 py-3 font-semibold">{t("Flows")}</th>
+              <th className="px-4 py-3 font-semibold">{t("Anomalies")}</th>
+              <th className="px-4 py-3 font-semibold">{t("Finished")}</th>
+              <th className="px-4 py-3 text-right font-semibold">{t("Open")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {chunks.map((chunk) => (
               <tr key={chunk.id} className="hover:bg-panel">
                 <td className="px-4 py-3 text-ink">{chunk.chunk_index ?? "-"}</td>
-                <td className="px-4 py-3"><Badge tone={statusTone(chunk.status)}>{chunk.status}</Badge></td>
+                <td className="px-4 py-3"><Badge tone={statusTone(chunk.status)}>{t(chunk.status)}</Badge></td>
                 <td className="px-4 py-3 text-muted">{chunk.flows_total}</td>
                 <td className="px-4 py-3 text-muted">{chunk.flows_anomaly}</td>
                 <td className="px-4 py-3 text-muted">{formatDateTime(chunk.finished_at)}</td>
                 <td className="px-4 py-3 text-right">
                   <Link className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-medium text-ink hover:bg-panel" to={`/captures/${chunk.id}`}>
                     <Eye size={16} />
-                    Open
+                    {t("Open")}
                   </Link>
                 </td>
               </tr>
@@ -448,7 +451,7 @@ function ChunksTable({ chunks }) {
             {chunks.length === 0 ? (
               <tr>
                 <td className="px-4 py-6 text-muted" colSpan="6">
-                  Chunks пока нет. Запустите агента, чтобы он получил команду.
+                  {t("No chunks yet. Start the agent so it can receive the command.")}
                 </td>
               </tr>
             ) : null}

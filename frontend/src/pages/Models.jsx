@@ -8,6 +8,7 @@ import Input from "../components/Input";
 import PageHeader from "../components/PageHeader";
 import Spinner from "../components/Spinner";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 function formatMetric(value) {
   if (value === null || value === undefined) {
@@ -22,6 +23,7 @@ function getF1(model) {
 
 export default function Models() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [models, setModels] = useState([]);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -72,7 +74,7 @@ export default function Models() {
     setNotice("");
     try {
       await deleteModel(model.id);
-      setNotice("Модель удалена");
+      setNotice(t("Model deleted"));
       await loadModels();
     } catch (requestError) {
       setError(requestError.message);
@@ -84,7 +86,7 @@ export default function Models() {
   async function handleUpload(event) {
     event.preventDefault();
     if (!uploadForm.file) {
-      setError("Выберите .joblib файл модели");
+      setError(t("Select a .joblib model file"));
       return;
     }
     setError("");
@@ -92,7 +94,7 @@ export default function Models() {
     setIsUploading(true);
     try {
       const response = await uploadModel(uploadForm);
-      setNotice(`Модель ${response.display_name} загружена`);
+      setNotice(t("Model {name} uploaded", { name: response.display_name }));
       setUploadForm({ modelId: "", displayName: "", file: null });
       event.target.reset();
       await loadModels();
@@ -119,36 +121,36 @@ export default function Models() {
   return (
     <>
       <PageHeader
-        title="Models"
-        description="Реестр обученных моделей, загруженных из артефактов исследовательской части."
+        title={t("Models")}
+        description={t("Registry of trained models loaded from research artifacts.")}
         actions={
           <Button onClick={loadModels}>
             <RefreshCw size={16} />
-            Refresh
+            {t("Refresh")}
           </Button>
         }
       />
       <section className="grid gap-4 p-5">
         <form className="grid gap-4 rounded-lg border border-line bg-white p-4" onSubmit={handleUpload}>
           <div className="flex flex-col gap-1">
-            <h2 className="text-base font-semibold text-ink">Upload model artifact</h2>
-            <p className="text-sm text-muted">Загрузка `.joblib` артефакта в формате исследовательского контракта.</p>
+            <h2 className="text-base font-semibold text-ink">{t("Upload model artifact")}</h2>
+            <p className="text-sm text-muted">{t("Upload a .joblib artifact in the research contract format.")}</p>
           </div>
           <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1.2fr_auto] lg:items-end">
             <Input
-              label="Model ID"
+              label={t("Model ID")}
               value={uploadForm.modelId}
               onChange={(event) => setUploadForm((current) => ({ ...current, modelId: event.target.value }))}
               placeholder="optional-custom-id"
             />
             <Input
-              label="Display name"
+              label={t("Display name")}
               value={uploadForm.displayName}
               onChange={(event) => setUploadForm((current) => ({ ...current, displayName: event.target.value }))}
-              placeholder="Optional display name"
+              placeholder={t("Optional display name")}
             />
             <label className="grid gap-1.5 text-sm text-ink">
-              <span className="font-medium">Artifact</span>
+              <span className="font-medium">{t("Artifact")}</span>
               <input
                 className="h-10 rounded-md border border-line bg-white px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-panel file:px-2 file:py-1 file:text-xs file:font-medium file:text-ink"
                 type="file"
@@ -158,22 +160,22 @@ export default function Models() {
             </label>
             <Button type="submit" variant="primary" disabled={!isAdmin || isUploading}>
               <Upload size={16} />
-              {isUploading ? "Uploading" : "Upload"}
+              {isUploading ? t("Uploading") : t("Upload")}
             </Button>
           </div>
         </form>
 
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-lg border border-line bg-white p-4">
-            <div className="text-xs uppercase text-muted">Registered</div>
+            <div className="text-xs uppercase text-muted">{t("Registered")}</div>
             <div className="mt-1 text-2xl font-semibold text-ink">{models.length}</div>
           </div>
           <div className="rounded-lg border border-line bg-white p-4">
-            <div className="text-xs uppercase text-muted">Active</div>
+            <div className="text-xs uppercase text-muted">{t("Active")}</div>
             <div className="mt-1 text-2xl font-semibold text-ink">{models.filter((model) => model.is_active).length}</div>
           </div>
           <div className="rounded-lg border border-line bg-white p-4">
-            <div className="text-xs uppercase text-muted">Default</div>
+            <div className="text-xs uppercase text-muted">{t("Default")}</div>
             <div className="mt-1 truncate text-lg font-semibold text-ink">{defaultModel?.display_name ?? "-"}</div>
           </div>
         </div>
@@ -188,13 +190,13 @@ export default function Models() {
               <table className="w-full min-w-[980px] text-left text-sm">
                 <thead className="border-b border-line bg-panel text-xs uppercase text-muted">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Name</th>
-                    <th className="px-4 py-3 font-semibold">Class</th>
-                    <th className="px-4 py-3 font-semibold">Score</th>
-                    <th className="px-4 py-3 font-semibold">Threshold</th>
-                    <th className="px-4 py-3 font-semibold">F1 anomaly</th>
-                    <th className="px-4 py-3 font-semibold">State</th>
-                    <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                    <th className="px-4 py-3 font-semibold">{t("Name")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Class")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Score")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Threshold")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("F1 anomaly")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("State")}</th>
+                    <th className="px-4 py-3 text-right font-semibold">{t("Actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -210,29 +212,29 @@ export default function Models() {
                       <td className="px-4 py-3 text-muted">{formatMetric(getF1(model))}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
-                          <Badge tone={model.is_active ? "green" : "neutral"}>{model.is_active ? "active" : "inactive"}</Badge>
-                          {model.is_default ? <Badge tone="blue">default</Badge> : null}
+                          <Badge tone={model.is_active ? "green" : "neutral"}>{model.is_active ? t("active") : t("inactive")}</Badge>
+                          {model.is_default ? <Badge tone="blue">{t("default")}</Badge> : null}
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
                           <Button disabled={busyId === model.id} onClick={() => handleDetails(model)}>
                             <Eye size={16} />
-                            Details
+                            {t("Details")}
                           </Button>
                           <Button
                             disabled={!isAdmin || busyId === model.id}
-                            onClick={() => handlePatch(model, { is_active: !model.is_active }, "Статус модели обновлен")}
+                            onClick={() => handlePatch(model, { is_active: !model.is_active }, t("Model status updated"))}
                           >
                             <Check size={16} />
-                            {model.is_active ? "Disable" : "Enable"}
+                            {model.is_active ? t("Disable") : t("Enable")}
                           </Button>
                           <Button
                             disabled={!isAdmin || model.is_default || busyId === model.id}
-                            onClick={() => handlePatch(model, { is_default: true }, "Default-модель обновлена")}
+                            onClick={() => handlePatch(model, { is_default: true }, t("Default model updated"))}
                           >
                             <Star size={16} />
-                            Default
+                            {t("Default")}
                           </Button>
                           <Button
                             variant="danger"
@@ -240,7 +242,7 @@ export default function Models() {
                             onClick={() => handleDelete(model)}
                           >
                             <Trash2 size={16} />
-                            Delete
+                            {t("Delete")}
                           </Button>
                         </div>
                       </td>
@@ -256,12 +258,13 @@ export default function Models() {
         model={detailModel}
         isLoading={isDetailLoading}
         onClose={() => setDetailModel(null)}
+        t={t}
       />
     </>
   );
 }
 
-function ModelDetailsModal({ model, isLoading, onClose }) {
+function ModelDetailsModal({ model, isLoading, onClose, t }) {
   if (!model) return null;
   const metricEntries = Object.entries(model.metrics_test ?? {});
   const trainMetricEntries = Object.entries(model.metrics_train ?? {});
@@ -276,25 +279,25 @@ function ModelDetailsModal({ model, isLoading, onClose }) {
             <h2 className="text-lg font-semibold text-ink">{model.display_name}</h2>
             <div className="mt-1 text-xs text-muted">{model.model_id} · {model.model_class_name}</div>
           </div>
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={onClose}>{t("Close")}</Button>
         </div>
         <div className="max-h-[72vh] overflow-y-auto p-5">
           {isLoading ? <Spinner /> : null}
           {!isLoading ? (
             <div className="grid gap-5">
               <div className="grid gap-3 md:grid-cols-4">
-                <Metric label="Threshold" value={formatMetric(model.decision_threshold)} />
-                <Metric label="Score type" value={model.score_type} />
-                <Metric label="Features" value={model.features?.length ?? 0} />
-                <Metric label="Size KB" value={formatMetric(model.size_kb)} />
+                <Metric label={t("Threshold")} value={formatMetric(model.decision_threshold)} />
+                <Metric label={t("Score type")} value={model.score_type} />
+                <Metric label={t("Features")} value={model.features?.length ?? 0} />
+                <Metric label={t("Size KB")} value={formatMetric(model.size_kb)} />
               </div>
 
-              <DetailSection title="Test metrics" entries={metricEntries} />
-              {trainMetricEntries.length ? <DetailSection title="Train metrics" entries={trainMetricEntries} /> : null}
-              {configEntries.length ? <DetailSection title="Model config" entries={configEntries} /> : null}
+              <DetailSection title={t("Test metrics")} entries={metricEntries} />
+              {trainMetricEntries.length ? <DetailSection title={t("Train metrics")} entries={trainMetricEntries} /> : null}
+              {configEntries.length ? <DetailSection title={t("Model config")} entries={configEntries} /> : null}
 
               <div className="rounded-lg border border-line">
-                <div className="border-b border-line bg-panel px-4 py-3 text-sm font-semibold text-ink">Feature importance</div>
+                <div className="border-b border-line bg-panel px-4 py-3 text-sm font-semibold text-ink">{t("Feature importance")}</div>
                 <div className="grid gap-2 p-4">
                   {importances.map((item) => (
                     <div key={item.feature} className="grid gap-2 md:grid-cols-[220px_1fr_90px] md:items-center">
@@ -308,7 +311,7 @@ function ModelDetailsModal({ model, isLoading, onClose }) {
                       <div className="text-right text-sm text-muted">{formatMetric(item.importance)}</div>
                     </div>
                   ))}
-                  {importances.length === 0 ? <div className="text-sm text-muted">Feature importance недоступен для этого артефакта.</div> : null}
+                  {importances.length === 0 ? <div className="text-sm text-muted">{t("Feature importance is not available for this artifact.")}</div> : null}
                 </div>
               </div>
             </div>

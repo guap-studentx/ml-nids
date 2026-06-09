@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Spinner from "./components/Spinner";
 import { useAuth } from "./context/AuthContext";
+import { useLanguage } from "./context/LanguageContext";
 import Agents from "./pages/Agents";
 import CaptureDetail from "./pages/CaptureDetail";
 import CaptureFlows from "./pages/CaptureFlows";
@@ -16,11 +17,12 @@ import Reports from "./pages/Reports";
 
 function ProtectedLayout() {
   const { isAuthenticated, isReady, logout, user } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
 
   if (!isReady) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-panel">
-        <Spinner label="Восстановление сессии" />
+        <Spinner label={t("Restore session")} />
       </main>
     );
   }
@@ -34,6 +36,17 @@ function ProtectedLayout() {
       <Sidebar />
       <main className="min-w-0 flex-1">
         <div className="flex h-16 items-center justify-end gap-3 border-b border-line bg-white px-5">
+          <label className="flex items-center gap-2 text-sm text-muted">
+            <span className="hidden sm:inline">{t("Language")}</span>
+            <select
+              className="h-9 rounded-md border border-line bg-white px-2 text-sm font-medium text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
+              value={language}
+              onChange={(event) => setLanguage(event.target.value)}
+            >
+              <option value="en">EN</option>
+              <option value="ru">RU</option>
+            </select>
+          </label>
           <div className="text-right">
             <div className="text-sm font-medium text-ink">{user.username}</div>
             <div className="text-xs text-muted">{user.role}</div>
@@ -43,7 +56,7 @@ function ProtectedLayout() {
             onClick={logout}
             className="h-9 rounded-md border border-line bg-white px-3 text-sm font-medium text-muted hover:bg-panel hover:text-ink"
           >
-            Выйти
+            {t("Logout")}
           </button>
         </div>
         <Routes>

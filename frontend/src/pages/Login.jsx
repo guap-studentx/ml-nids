@@ -5,9 +5,11 @@ import { Navigate } from "react-router-dom";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Login() {
   const { isAuthenticated, isReady, login } = useAuth();
+  const { t } = useLanguage();
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("admin");
   const [error, setError] = useState("");
@@ -39,20 +41,20 @@ export default function Login() {
           </div>
           <div>
             <h1 className="text-xl font-semibold text-ink">ML-NIDS</h1>
-            <p className="text-sm text-muted">Панель анализа сетевого трафика</p>
+            <p className="text-sm text-muted">{t("Network traffic analysis panel")}</p>
           </div>
         </div>
         <form className="grid gap-4" onSubmit={handleSubmit}>
-          <Input label="Логин" value={username} onChange={(event) => setUsername(event.target.value)} />
+          <Input label={t("Username")} value={username} onChange={(event) => setUsername(event.target.value)} />
           <Input
-            label="Пароль"
+            label={t("Password")}
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
           {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-danger">{error}</div> : null}
           <Button type="submit" variant="primary" disabled={isSubmitting}>
-            {isSubmitting ? "Вход..." : "Войти"}
+            {isSubmitting ? t("Signing in...") : t("Sign in")}
           </Button>
         </form>
       </section>

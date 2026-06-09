@@ -8,6 +8,7 @@ import Input from "../components/Input";
 import PageHeader from "../components/PageHeader";
 import Spinner from "../components/Spinner";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 function statusTone(status) {
   if (status === "online") return "green";
@@ -23,6 +24,7 @@ function formatTime(value) {
 
 export default function Agents() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [agents, setAgents] = useState([]);
   const [name, setName] = useState("");
   const [createdToken, setCreatedToken] = useState(null);
@@ -62,7 +64,7 @@ export default function Agents() {
   async function handleCreate(event) {
     event.preventDefault();
     if (!name.trim()) {
-      setError("Введите имя агента");
+      setError(t("Enter agent name"));
       return;
     }
 
@@ -72,7 +74,7 @@ export default function Agents() {
     try {
       const response = await createAgent(name.trim());
       setCreatedToken({ name: response.name, token: response.agent_token });
-      setNotice("Агент создан. Token показывается только один раз.");
+      setNotice(t("Agent created. Token is shown only once."));
       setName("");
       await loadAgents();
     } catch (requestError) {
@@ -88,7 +90,7 @@ export default function Agents() {
     setNotice("");
     try {
       await deleteAgent(agent.id);
-      setNotice(`Агент ${agent.name} удален`);
+      setNotice(t("Agent {name} deleted", { name: agent.name }));
       await loadAgents();
     } catch (requestError) {
       setError(requestError.message);
@@ -113,19 +115,19 @@ export default function Agents() {
   return (
     <>
       <PageHeader
-        title="Agents"
-        description="Управление livecap-agent: регистрация сенсоров, интерфейсы и состояние подключения."
+        title={t("Agents")}
+        description={t("Manage livecap-agent sensors: registration, interfaces, and connection state.")}
         actions={
           <Button onClick={loadAgents}>
             <RefreshCw size={16} />
-            Refresh
+            {t("Refresh")}
           </Button>
         }
       />
       <section className="grid gap-5 p-5">
         {!isAdmin ? (
           <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-            Управление агентами доступно только администратору.
+            {t("Agent management is available only to administrators.")}
           </div>
         ) : null}
 
@@ -135,22 +137,22 @@ export default function Agents() {
               <RadioTower size={18} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-ink">Add livecap-agent</h2>
-              <p className="text-sm text-muted">Создайте запись агента и сохраните token для запуска на sensor-хосте.</p>
+              <h2 className="text-base font-semibold text-ink">{t("Add livecap-agent")}</h2>
+              <p className="text-sm text-muted">{t("Create an agent record and save the token for running it on the sensor host.")}</p>
             </div>
           </div>
           <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
-            <Input label="Agent name" value={name} onChange={(event) => setName(event.target.value)} placeholder="ubuntu-sensor-01" />
+            <Input label={t("Agent name")} value={name} onChange={(event) => setName(event.target.value)} placeholder="ubuntu-sensor-01" />
             <Button type="submit" variant="primary" disabled={!isAdmin || isCreating}>
               <Plus size={16} />
-              {isCreating ? "Creating" : "Create"}
+              {isCreating ? t("Creating") : t("Create")}
             </Button>
           </div>
         </form>
 
         {createdToken ? (
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-            <div className="text-sm font-semibold text-emerald-800">Token for {createdToken.name}</div>
+            <div className="text-sm font-semibold text-emerald-800">{t("Token for {name}", { name: createdToken.name })}</div>
             <div className="mt-2 break-all rounded-md border border-emerald-200 bg-white px-3 py-2 font-mono text-sm text-ink">
               {createdToken.token}
             </div>
@@ -170,11 +172,11 @@ export default function Agents() {
               <table className="w-full min-w-[920px] text-left text-sm">
                 <thead className="border-b border-line bg-panel text-xs uppercase text-muted">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Name</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">Last seen</th>
-                    <th className="px-4 py-3 font-semibold">Interfaces</th>
-                    <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                    <th className="px-4 py-3 font-semibold">{t("Name")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Status")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Last seen")}</th>
+                    <th className="px-4 py-3 font-semibold">{t("Interfaces")}</th>
+                    <th className="px-4 py-3 text-right font-semibold">{t("Actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -187,7 +189,7 @@ export default function Agents() {
                           <div className="text-xs text-muted">{agent.id}</div>
                         </td>
                         <td className="px-4 py-3">
-                          <Badge tone={statusTone(agent.status)}>{agent.status ?? "unknown"}</Badge>
+                          <Badge tone={statusTone(agent.status)}>{t(agent.status ?? "unknown")}</Badge>
                         </td>
                         <td className="px-4 py-3 text-muted">{formatTime(agent.last_seen_at)}</td>
                         <td className="px-4 py-3">
@@ -201,11 +203,11 @@ export default function Agents() {
                         <td className="px-4 py-3">
                           <div className="flex justify-end gap-2">
                             <Button disabled={!isAdmin || busyId === agent.id} onClick={() => handleIfaces(agent)}>
-                              Ifaces
+                              {t("Ifaces")}
                             </Button>
                             <Button variant="danger" disabled={!isAdmin || busyId === agent.id} onClick={() => handleDelete(agent)}>
                               <Trash2 size={16} />
-                              Delete
+                              {t("Delete")}
                             </Button>
                           </div>
                         </td>
@@ -215,7 +217,7 @@ export default function Agents() {
                   {agents.length === 0 ? (
                     <tr>
                       <td className="px-4 py-6 text-muted" colSpan="5">
-                        Агентов пока нет.
+                        {t("No agents yet.")}
                       </td>
                     </tr>
                   ) : null}

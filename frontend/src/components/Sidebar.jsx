@@ -1,6 +1,8 @@
 import { Activity, Database, FileText, History, LayoutDashboard, RadioTower, ShieldCheck, Signal } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
+import { useLanguage } from "../context/LanguageContext";
+
 const items = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/captures", label: "Captures", icon: Activity },
@@ -12,6 +14,8 @@ const items = [
 ];
 
 export default function Sidebar() {
+  const { t } = useLanguage();
+
   return (
     <aside className="flex w-full shrink-0 flex-col border-b border-line bg-white md:min-h-screen md:w-64 md:border-b-0 md:border-r">
       <div className="flex h-16 items-center gap-3 border-b border-line px-5">
@@ -20,7 +24,7 @@ export default function Sidebar() {
         </div>
         <div>
           <div className="text-base font-semibold text-ink">ML-NIDS</div>
-          <div className="text-xs text-muted">Traffic analysis</div>
+          <div className="text-xs text-muted">{t("Traffic analysis")}</div>
         </div>
       </div>
       <nav className="flex gap-1 overflow-x-auto p-3 md:flex-col md:overflow-visible">
@@ -37,7 +41,7 @@ export default function Sidebar() {
               }
             >
               <Icon size={18} />
-              <span>{item.label}</span>
+              <span>{t(item.label)}</span>
             </NavLink>
           );
         })}

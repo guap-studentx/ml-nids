@@ -9,6 +9,7 @@ import Button from "../components/Button";
 import FlowDetailModal from "../components/FlowDetailModal";
 import PageHeader from "../components/PageHeader";
 import Spinner from "../components/Spinner";
+import { useLanguage } from "../context/LanguageContext";
 
 function statusTone(status) {
   if (status === "completed") return "green";
@@ -39,6 +40,7 @@ function endpointLabel(flow) {
 }
 
 export default function CaptureDetail() {
+  const { t } = useLanguage();
   const { captureId } = useParams();
   const [analytics, setAnalytics] = useState(null);
   const [error, setError] = useState("");
@@ -94,7 +96,7 @@ export default function CaptureDetail() {
     setIsGeneratingReport(true);
     try {
       const report = await createReport(captureId, "pdf");
-      setNotice(`Report generated: ${report.id}`);
+      setNotice(t("Report generated: {id}", { id: report.id }));
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -165,32 +167,32 @@ export default function CaptureDetail() {
   return (
     <>
       <PageHeader
-        title={capture?.name ?? capture?.source_filename ?? "Capture detail"}
-        description={capture ? `${capture.mode} · ${capture.id}` : "Загрузка данных capture-сессии"}
+        title={capture?.name ?? capture?.source_filename ?? t("Capture detail")}
+        description={capture ? `${capture.mode} · ${capture.id}` : t("Loading capture data")}
         actions={
           <>
             <Link to="/captures">
               <Button>
                 <ArrowLeft size={16} />
-                Back
+                {t("Back")}
               </Button>
             </Link>
             <Button onClick={loadAnalytics}>
               <RefreshCw size={16} />
-              Refresh
+              {t("Refresh")}
             </Button>
             <Button onClick={handleExport}>
               <Download size={16} />
-              Export CSV
+              {t("Export CSV")}
             </Button>
             <Button onClick={handleGenerateReport} disabled={isGeneratingReport || capture?.status !== "completed"}>
               <FileText size={16} />
-              {isGeneratingReport ? "Generating" : "Report"}
+              {isGeneratingReport ? t("Generating") : t("Report")}
             </Button>
             <Link to={`/captures/${captureId}/flows`}>
               <Button variant="primary">
                 <ListFilter size={16} />
-                All flows
+                {t("All flows")}
               </Button>
             </Link>
           </>
@@ -210,21 +212,21 @@ export default function CaptureDetail() {
           <>
             <div className="grid gap-3 md:grid-cols-4">
               <div className="rounded-lg border border-line bg-white p-4">
-                <div className="text-xs uppercase text-muted">Status</div>
+                <div className="text-xs uppercase text-muted">{t("Status")}</div>
                 <div className="mt-2">
-                  <Badge tone={statusTone(capture.status)}>{capture.status}</Badge>
+                  <Badge tone={statusTone(capture.status)}>{t(capture.status)}</Badge>
                 </div>
               </div>
               <div className="rounded-lg border border-line bg-white p-4">
-                <div className="text-xs uppercase text-muted">Total flows</div>
+                <div className="text-xs uppercase text-muted">{t("Total flows")}</div>
                 <div className="mt-1 text-2xl font-semibold text-ink">{summary.total_flows}</div>
               </div>
               <div className="rounded-lg border border-line bg-white p-4">
-                <div className="text-xs uppercase text-muted">Anomalies</div>
+                <div className="text-xs uppercase text-muted">{t("Anomalies")}</div>
                 <div className="mt-1 text-2xl font-semibold text-ink">{summary.anomaly_flows}</div>
               </div>
               <div className="rounded-lg border border-line bg-white p-4">
-                <div className="text-xs uppercase text-muted">Anomaly rate</div>
+                <div className="text-xs uppercase text-muted">{t("Anomaly rate")}</div>
                 <div className="mt-1 text-2xl font-semibold text-ink">{formatPercent(summary.anomaly_rate)}</div>
               </div>
             </div>
@@ -235,7 +237,7 @@ export default function CaptureDetail() {
 
             <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
               <div className="rounded-lg border border-line bg-white p-4">
-                <h2 className="text-base font-semibold text-ink">Score distribution</h2>
+                <h2 className="text-base font-semibold text-ink">{t("Score distribution")}</h2>
                 <div className="mt-4 h-72">
                   {scoreBuckets.length ? (
                     <ResponsiveContainer width="100%" height="100%">
@@ -248,32 +250,32 @@ export default function CaptureDetail() {
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="flex h-full items-center text-sm text-muted">Нет данных для распределения.</div>
+                    <div className="flex h-full items-center text-sm text-muted">{t("No distribution data.")}</div>
                   )}
                 </div>
               </div>
 
               <div className="grid gap-5">
-                <EndpointTable title="Top sources" rows={analytics.top_sources} />
-                <EndpointTable title="Top destinations" rows={analytics.top_destinations} />
+                <EndpointTable title={t("Top sources")} rows={analytics.top_sources} t={t} />
+                <EndpointTable title={t("Top destinations")} rows={analytics.top_destinations} t={t} />
               </div>
             </div>
 
             <div className="overflow-hidden rounded-lg border border-line bg-white">
               <div className="border-b border-line px-4 py-3">
-                <h2 className="text-base font-semibold text-ink">Recent anomaly flows</h2>
+                <h2 className="text-base font-semibold text-ink">{t("Recent anomaly flows")}</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[920px] text-left text-sm">
                   <thead className="border-b border-line bg-panel text-xs uppercase text-muted">
                     <tr>
-                      <th className="px-4 py-3 font-semibold">Timestamp</th>
-                      <th className="px-4 py-3 font-semibold">Endpoint</th>
-                      <th className="px-4 py-3 font-semibold">Protocol</th>
-                      <th className="px-4 py-3 font-semibold">Packets</th>
-                      <th className="px-4 py-3 font-semibold">Bytes</th>
-                      <th className="px-4 py-3 font-semibold">Score</th>
-                      <th className="px-4 py-3 font-semibold">Prediction</th>
+                      <th className="px-4 py-3 font-semibold">{t("Timestamp")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Endpoint")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Protocol")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Packets")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Bytes")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Score")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Prediction")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
@@ -293,7 +295,7 @@ export default function CaptureDetail() {
                     {analytics.recent_flows.length === 0 ? (
                       <tr>
                         <td className="px-4 py-6 text-muted" colSpan="7">
-                          Аномальных flow пока нет.
+                          {t("No anomaly flows yet.")}
                         </td>
                       </tr>
                     ) : null}
@@ -319,7 +321,7 @@ export default function CaptureDetail() {
   );
 }
 
-function EndpointTable({ title, rows }) {
+function EndpointTable({ title, rows, t }) {
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-white">
       <div className="border-b border-line px-4 py-3">
@@ -328,8 +330,8 @@ function EndpointTable({ title, rows }) {
       <table className="w-full text-left text-sm">
         <thead className="border-b border-line bg-panel text-xs uppercase text-muted">
           <tr>
-            <th className="px-4 py-3 font-semibold">Value</th>
-            <th className="px-4 py-3 text-right font-semibold">Count</th>
+            <th className="px-4 py-3 font-semibold">{t("Value")}</th>
+            <th className="px-4 py-3 text-right font-semibold">{t("Count")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-line">
@@ -342,7 +344,7 @@ function EndpointTable({ title, rows }) {
           {rows.length === 0 ? (
             <tr>
               <td className="px-4 py-6 text-muted" colSpan="2">
-                Нет данных.
+                {t("No data.")}
               </td>
             </tr>
           ) : null}

@@ -8,6 +8,7 @@ import Badge from "../components/Badge";
 import Button from "../components/Button";
 import PageHeader from "../components/PageHeader";
 import Spinner from "../components/Spinner";
+import { useLanguage } from "../context/LanguageContext";
 
 function statusTone(status) {
   if (status === "completed") return "green";
@@ -22,6 +23,7 @@ function formatTime(value) {
 }
 
 export default function Dashboard() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
   const [timeseries, setTimeseries] = useState(null);
@@ -62,8 +64,8 @@ export default function Dashboard() {
   return (
     <>
       <PageHeader
-        title="Dashboard"
-        description="Оперативная сводка по обработанным сессиям, аномалиям и состоянию компонентов."
+        title={t("Dashboard")}
+        description={t("System summary for processed sessions, anomalies, and component status.")}
         actions={
           <>
             <select
@@ -77,7 +79,7 @@ export default function Dashboard() {
             </select>
             <Button onClick={loadDashboard}>
               <RefreshCw size={16} />
-              Refresh
+              {t("Refresh")}
             </Button>
           </>
         }
@@ -94,16 +96,16 @@ export default function Dashboard() {
         {!isLoading && summary ? (
           <>
             <div className="grid gap-3 md:grid-cols-4">
-              <MetricCard icon={Activity} label="Sessions" value={summary.total_sessions} />
-              <MetricCard icon={ShieldAlert} label="Anomalies 24h" value={summary.anomalies_24h} />
-              <MetricCard icon={RadioTower} label="Active agents" value={summary.active_agents} />
-              <MetricCard icon={Database} label="Active models" value={summary.active_models} />
+              <MetricCard icon={Activity} label={t("Sessions")} value={summary.total_sessions} />
+              <MetricCard icon={ShieldAlert} label={t("Anomalies 24h")} value={summary.anomalies_24h} />
+              <MetricCard icon={RadioTower} label={t("Active agents")} value={summary.active_agents} />
+              <MetricCard icon={Database} label={t("Active models")} value={summary.active_models} />
             </div>
 
             <div className="rounded-lg border border-line bg-white p-4">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-ink">Anomaly timeline</h2>
-                <span className="text-sm text-muted">{timeseries?.period_hours ?? 24} hours</span>
+                <h2 className="text-base font-semibold text-ink">{t("Anomaly timeline")}</h2>
+                <span className="text-sm text-muted">{timeseries?.period_hours ?? 24} {t("hours")}</span>
               </div>
               <div className="mt-4 h-72">
                 {chartData.length ? (
@@ -117,25 +119,25 @@ export default function Dashboard() {
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex h-full items-center text-sm text-muted">Нет точек для выбранного периода.</div>
+                  <div className="flex h-full items-center text-sm text-muted">{t("No points for selected period.")}</div>
                 )}
               </div>
             </div>
 
             <div className="overflow-hidden rounded-lg border border-line bg-white">
               <div className="border-b border-line px-4 py-3">
-                <h2 className="text-base font-semibold text-ink">Recent captures</h2>
+                <h2 className="text-base font-semibold text-ink">{t("Recent captures")}</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[860px] text-left text-sm">
                   <thead className="border-b border-line bg-panel text-xs uppercase text-muted">
                     <tr>
-                      <th className="px-4 py-3 font-semibold">Name</th>
-                      <th className="px-4 py-3 font-semibold">Mode</th>
-                      <th className="px-4 py-3 font-semibold">Status</th>
-                      <th className="px-4 py-3 font-semibold">Flows</th>
-                      <th className="px-4 py-3 font-semibold">Anomalies</th>
-                      <th className="px-4 py-3 font-semibold">Finished</th>
+                      <th className="px-4 py-3 font-semibold">{t("Name")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Mode")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Status")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Flows")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Anomalies")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Finished")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
@@ -146,9 +148,9 @@ export default function Dashboard() {
                         onClick={() => navigate(`/captures/${capture.id}`)}
                       >
                         <td className="px-4 py-3 font-medium text-ink">{capture.name ?? capture.source_filename ?? capture.id}</td>
-                        <td className="px-4 py-3 text-muted">{capture.mode}</td>
+                        <td className="px-4 py-3 text-muted">{t(capture.mode)}</td>
                         <td className="px-4 py-3">
-                          <Badge tone={statusTone(capture.status)}>{capture.status}</Badge>
+                          <Badge tone={statusTone(capture.status)}>{t(capture.status)}</Badge>
                         </td>
                         <td className="px-4 py-3 text-muted">{capture.flows_total}</td>
                         <td className="px-4 py-3 text-muted">{capture.flows_anomaly}</td>
@@ -158,7 +160,7 @@ export default function Dashboard() {
                     {summary.recent_captures.length === 0 ? (
                       <tr>
                         <td className="px-4 py-6 text-muted" colSpan="6">
-                          Capture-сессий пока нет.
+                          {t("No capture sessions yet.")}
                         </td>
                       </tr>
                     ) : null}

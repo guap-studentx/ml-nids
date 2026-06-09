@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 
 import Badge from "./Badge";
 import Button from "./Button";
+import { useLanguage } from "../context/LanguageContext";
 
 function formatValue(value) {
   if (value === null || value === undefined || value === "") return "-";
@@ -16,6 +17,7 @@ function endpointLabel(flow) {
 }
 
 export default function FlowDetailModal({ detail, error, isLoading, onClose }) {
+  const { t } = useLanguage();
   const flow = detail?.flow;
   const featureRows = flow ? Object.entries(flow.flow_features ?? {}).sort(([left], [right]) => left.localeCompare(right)) : [];
 
@@ -24,8 +26,8 @@ export default function FlowDetailModal({ detail, error, isLoading, onClose }) {
       <div className="w-full max-w-5xl overflow-hidden rounded-lg border border-line bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
           <div>
-            <h2 className="text-lg font-semibold text-ink">Flow detail</h2>
-            <p className="mt-1 text-sm text-muted">{flow ? endpointLabel(flow) : "Загрузка flow"}</p>
+            <h2 className="text-lg font-semibold text-ink">{t("Flow detail")}</h2>
+            <p className="mt-1 text-sm text-muted">{flow ? endpointLabel(flow) : t("Loading flow")}</p>
           </div>
           <Button variant="ghost" onClick={onClose}>
             <X size={18} />
@@ -33,17 +35,17 @@ export default function FlowDetailModal({ detail, error, isLoading, onClose }) {
         </div>
 
         <div className="grid gap-5 p-5">
-          {isLoading ? <div className="text-sm text-muted">Загрузка...</div> : null}
+          {isLoading ? <div className="text-sm text-muted">{t("Loading...")}</div> : null}
           {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-danger">{error}</div> : null}
 
           {flow ? (
             <>
               <div className="grid gap-3 md:grid-cols-4">
-                <Info label="Protocol" value={flow.protocol ?? "-"} />
-                <Info label="Score" value={formatValue(flow.anomaly_score)} />
-                <Info label="Packets" value={flow.bidirectional_packets ?? "-"} />
+                <Info label={t("Protocol")} value={flow.protocol ?? "-"} />
+                <Info label={t("Score")} value={formatValue(flow.anomaly_score)} />
+                <Info label={t("Packets")} value={flow.bidirectional_packets ?? "-"} />
                 <div className="rounded-lg border border-line bg-panel p-3">
-                  <div className="text-xs uppercase text-muted">Prediction</div>
+                  <div className="text-xs uppercase text-muted">{t("Prediction")}</div>
                   <div className="mt-2">
                     <Badge tone={flow.prediction === 1 ? "red" : "neutral"}>{flow.prediction === 1 ? "ANOMALY" : "BENIGN"}</Badge>
                   </div>
@@ -52,12 +54,12 @@ export default function FlowDetailModal({ detail, error, isLoading, onClose }) {
 
               <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
                 <div className="overflow-hidden rounded-lg border border-line">
-                  <div className="border-b border-line bg-panel px-4 py-3 text-sm font-semibold text-ink">Top numeric deviations</div>
+                  <div className="border-b border-line bg-panel px-4 py-3 text-sm font-semibold text-ink">{t("Top numeric deviations")}</div>
                   <table className="w-full text-left text-sm">
                     <thead className="border-b border-line text-xs uppercase text-muted">
                       <tr>
-                        <th className="px-4 py-3 font-semibold">Feature</th>
-                        <th className="px-4 py-3 text-right font-semibold">Value</th>
+                        <th className="px-4 py-3 font-semibold">{t("Feature")}</th>
+                        <th className="px-4 py-3 text-right font-semibold">{t("Value")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-line">
@@ -70,7 +72,7 @@ export default function FlowDetailModal({ detail, error, isLoading, onClose }) {
                       {detail.explanation.length === 0 ? (
                         <tr>
                           <td className="px-4 py-6 text-muted" colSpan="2">
-                            Нет числовых признаков для explanation.
+                            {t("No numeric features for explanation.")}
                           </td>
                         </tr>
                       ) : null}
@@ -82,8 +84,8 @@ export default function FlowDetailModal({ detail, error, isLoading, onClose }) {
                   <table className="w-full text-left text-sm">
                     <thead className="sticky top-0 border-b border-line bg-panel text-xs uppercase text-muted">
                       <tr>
-                        <th className="px-4 py-3 font-semibold">Feature</th>
-                        <th className="px-4 py-3 font-semibold">Value</th>
+                        <th className="px-4 py-3 font-semibold">{t("Feature")}</th>
+                        <th className="px-4 py-3 font-semibold">{t("Value")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-line">

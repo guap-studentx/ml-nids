@@ -9,6 +9,7 @@ import Button from "../components/Button";
 import Input from "../components/Input";
 import PageHeader from "../components/PageHeader";
 import Spinner from "../components/Spinner";
+import { useLanguage } from "../context/LanguageContext";
 
 const pageSize = 50;
 
@@ -32,6 +33,7 @@ function toDateTimeParam(value, endOfDay = false) {
 }
 
 export default function History() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [captures, setCaptures] = useState([]);
   const [models, setModels] = useState([]);
@@ -106,7 +108,7 @@ export default function History() {
     setDeletingId(capture.id);
     try {
       await deleteCapture(capture.id);
-      setNotice(`Capture ${capture.name ?? capture.source_filename ?? capture.id} удален`);
+      setNotice(t("Capture {name} deleted", { name: capture.name ?? capture.source_filename ?? capture.id }));
       await loadCaptures();
     } catch (requestError) {
       setError(requestError.message);
@@ -121,7 +123,7 @@ export default function History() {
     setStoppingId(capture.id);
     try {
       const response = await stopCapture(capture.id);
-      setNotice(`Stop requested for ${capture.name ?? capture.source_filename ?? capture.id}. Status: ${response.status}`);
+      setNotice(t("Stop requested for {name}. Status: {status}", { name: capture.name ?? capture.source_filename ?? capture.id, status: response.status }));
       await loadCaptures();
     } catch (requestError) {
       setError(requestError.message);
@@ -133,12 +135,12 @@ export default function History() {
   return (
     <>
       <PageHeader
-        title="History"
-        description={`Архив capture-сессий с фильтрами. Всего: ${total}.`}
+        title={t("History")}
+        description={t("Archive of capture sessions with filters. Total: {total}.", { total })}
         actions={
           <Button onClick={loadCaptures}>
             <RefreshCw size={16} />
-            Refresh
+            {t("Refresh")}
           </Button>
         }
       />
@@ -146,34 +148,34 @@ export default function History() {
         <form className="rounded-lg border border-line bg-white p-4" onSubmit={handleSubmit}>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[150px_150px_170px_170px_1fr_auto] xl:items-end">
             <Input
-              label="Date from"
+              label={t("Date from")}
               type="date"
               value={draftFilters.dateFrom}
               onChange={(event) => handleFilterChange("dateFrom", event.target.value)}
             />
             <Input
-              label="Date to"
+              label={t("Date to")}
               type="date"
               value={draftFilters.dateTo}
               onChange={(event) => handleFilterChange("dateTo", event.target.value)}
             />
-            <Select label="Mode" value={draftFilters.mode} onChange={(value) => handleFilterChange("mode", value)}>
-              <option value="">All</option>
+            <Select label={t("Mode")} value={draftFilters.mode} onChange={(value) => handleFilterChange("mode", value)}>
+              <option value="">{t("All")}</option>
               <option value="offline_csv">Offline CSV</option>
               <option value="offline_pcap">Offline PCAP</option>
               <option value="live">Live</option>
             </Select>
-            <Select label="Status" value={draftFilters.status} onChange={(value) => handleFilterChange("status", value)}>
-              <option value="">All</option>
-              <option value="pending">Pending</option>
-              <option value="running">Running</option>
-              <option value="stopping">Stopping</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
-              <option value="stopped">Stopped</option>
+            <Select label={t("Status")} value={draftFilters.status} onChange={(value) => handleFilterChange("status", value)}>
+              <option value="">{t("All")}</option>
+              <option value="pending">{t("pending")}</option>
+              <option value="running">{t("running")}</option>
+              <option value="stopping">{t("stopping")}</option>
+              <option value="completed">{t("completed")}</option>
+              <option value="failed">{t("failed")}</option>
+              <option value="stopped">{t("stopped")}</option>
             </Select>
-            <Select label="Model" value={draftFilters.modelId} onChange={(value) => handleFilterChange("modelId", value)}>
-              <option value="">All</option>
+            <Select label={t("Model")} value={draftFilters.modelId} onChange={(value) => handleFilterChange("modelId", value)}>
+              <option value="">{t("All")}</option>
               {models.map((model) => (
                 <option key={model.id} value={model.id}>
                   {model.display_name}
@@ -182,7 +184,7 @@ export default function History() {
             </Select>
             <Button type="submit" variant="primary">
               <Search size={16} />
-              Apply
+              {t("Apply")}
             </Button>
           </div>
         </form>
@@ -202,13 +204,13 @@ export default function History() {
                 <table className="w-full min-w-[1120px] text-left text-sm">
                   <thead className="border-b border-line bg-panel text-xs uppercase text-muted">
                     <tr>
-                      <th className="px-4 py-3 font-semibold">Name</th>
-                      <th className="px-4 py-3 font-semibold">Started</th>
-                      <th className="px-4 py-3 font-semibold">Mode</th>
-                      <th className="px-4 py-3 font-semibold">Status</th>
-                      <th className="px-4 py-3 font-semibold">Flows</th>
-                      <th className="px-4 py-3 font-semibold">Anomalies</th>
-                      <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                      <th className="px-4 py-3 font-semibold">{t("Name")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Started")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Mode")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Status")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Flows")}</th>
+                      <th className="px-4 py-3 font-semibold">{t("Anomalies")}</th>
+                      <th className="px-4 py-3 text-right font-semibold">{t("Actions")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
@@ -219,9 +221,9 @@ export default function History() {
                           <div className="text-xs text-muted">{capture.id}</div>
                         </td>
                         <td className="px-4 py-3 text-muted">{formatDateTime(capture.started_at)}</td>
-                        <td className="px-4 py-3 text-muted">{capture.mode}</td>
+                        <td className="px-4 py-3 text-muted">{t(capture.mode)}</td>
                         <td className="px-4 py-3">
-                          <Badge tone={statusTone(capture.status)}>{capture.status}</Badge>
+                          <Badge tone={statusTone(capture.status)}>{t(capture.status)}</Badge>
                         </td>
                         <td className="px-4 py-3 text-muted">{capture.flows_total}</td>
                         <td className="px-4 py-3 text-muted">{capture.flows_anomaly}</td>
@@ -229,17 +231,17 @@ export default function History() {
                           <div className="flex justify-end gap-2">
                             <Button onClick={() => navigate(`/captures/${capture.id}`)}>
                               <Eye size={16} />
-                              View
+                              {t("View")}
                             </Button>
                             {capture.mode === "live" && ["pending", "running", "stopping"].includes(capture.status) ? (
                               <Button disabled={stoppingId === capture.id || capture.status === "stopping"} onClick={() => handleStop(capture)}>
                                 <Square size={16} />
-                                Stop
+                                {t("Stop")}
                               </Button>
                             ) : null}
                             <Button variant="danger" disabled={deletingId === capture.id} onClick={() => handleDelete(capture)}>
                               <Trash2 size={16} />
-                              Delete
+                              {t("Delete")}
                             </Button>
                           </div>
                         </td>
@@ -248,7 +250,7 @@ export default function History() {
                     {captures.length === 0 ? (
                       <tr>
                         <td className="px-4 py-6 text-muted" colSpan="7">
-                          Capture-сессий по выбранным фильтрам нет.
+                          {t("No capture sessions match selected filters.")}
                         </td>
                       </tr>
                     ) : null}
@@ -257,15 +259,15 @@ export default function History() {
               </div>
               <div className="flex flex-col gap-3 border-t border-line px-4 py-3 text-sm text-muted md:flex-row md:items-center md:justify-between">
                 <div>
-                  Page {page} of {totalPages}
+                  {t("Page {page} of {totalPages}", { page, totalPages })}
                 </div>
                 <div className="flex gap-2">
                   <Button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - pageSize))}>
                     <ChevronLeft size={16} />
-                    Previous
+                    {t("Previous")}
                   </Button>
                   <Button disabled={offset + pageSize >= total} onClick={() => setOffset(offset + pageSize)}>
-                    Next
+                    {t("Next")}
                     <ChevronRight size={16} />
                   </Button>
                 </div>

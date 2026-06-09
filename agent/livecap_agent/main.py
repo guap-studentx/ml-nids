@@ -11,6 +11,9 @@ from livecap_agent.interfaces import list_interfaces
 from livecap_agent.metadata import collect_metadata
 from livecap_agent.storage import cleanup_pcap_files, remove_file_quietly
 
+STATUS_POLL_INTERVAL_SECONDS = 5
+STATUS_POLL_TIMEOUT_SECONDS = 2.0
+
 
 def run_once(client: AgentApiClient) -> dict:
     return client.send_heartbeat(interfaces=list_interfaces(), metadata=collect_metadata())
@@ -68,7 +71,7 @@ def handle_command(client: AgentApiClient, config, command: dict) -> None:
             duration_seconds=command["duration_seconds"],
             output_path=output_path,
             bpf_filter=command.get("bpf_filter"),
-            should_stop=lambda: client.capture_status(capture_id=capture_id) == "stopping",
+            should_stop=_capture_should_stop(client, capture_id=capture_id),
         )
         client.upload_pcap(capture_id=capture_id, pcap_path=output_path)
         print(f"capture uploaded: capture_id={capture_id} file={output_path}")
@@ -93,7 +96,7 @@ def handle_live_session_command(client: AgentApiClient, config, command: dict) -
     )
     try:
         while True:
-            status = client.live_session_status(live_session_id=live_session_id)
+            status = _live_session_status(client, live_session_id=live_session_id)
             if status in {"stopping", "stopped", "failed", "completed"}:
                 break
 
@@ -113,9 +116,9 @@ def handle_live_session_command(client: AgentApiClient, config, command: dict) -
                 duration_seconds=current_chunk_seconds,
                 output_path=output_path,
                 bpf_filter=command.get("bpf_filter"),
-                should_stop=lambda: client.live_session_status(live_session_id=live_session_id) == "stopping",
+                should_stop=_live_session_should_stop(client, live_session_id=live_session_id),
             )
-            status = client.live_session_status(live_session_id=live_session_id)
+            status = _live_session_status(client, live_session_id=live_session_id)
             if status in {"stopped", "failed", "completed"}:
                 break
             client.upload_live_session_chunk(live_session_id=live_session_id, pcap_path=output_path)
@@ -143,6 +146,59 @@ def handle_live_session_command(client: AgentApiClient, config, command: dict) -
             return
         print(f"live session failed: live_session_id={live_session_id} error={message}")
         client.fail_live_session(live_session_id=live_session_id, error_message=message)
+
+
+def _capture_should_stop(client: AgentApiClient, *, capture_id: str):
+    last_checked_at = 0.0
+
+    def should_stop() -> bool:
+        nonlocal last_checked_at
+        now = time.monotonic()
+        if now - last_checked_at < STATUS_POLL_INTERVAL_SECONDS:
+            return False
+        last_checked_at = now
+        try:
+            return client.capture_status(capture_id=capture_id, timeout=STATUS_POLL_TIMEOUT_SECONDS) == "stopping"
+        except httpx.HTTPError as exc:
+            print(f"capture status check skipped: capture_id={capture_id} error={exc}")
+            return False
+
+    return should_stop
+
+
+def _live_session_should_stop(client: AgentApiClient, *, live_session_id: str):
+    last_checked_at = 0.0
+
+    def should_stop() -> bool:
+        nonlocal last_checked_at
+        now = time.monotonic()
+        if now - last_checked_at < STATUS_POLL_INTERVAL_SECONDS:
+            return False
+        last_checked_at = now
+        status = _live_session_status(
+            client,
+            live_session_id=live_session_id,
+            timeout=STATUS_POLL_TIMEOUT_SECONDS,
+            quiet=True,
+        )
+        return status == "stopping"
+
+    return should_stop
+
+
+def _live_session_status(
+    client: AgentApiClient,
+    *,
+    live_session_id: str,
+    timeout: float | None = None,
+    quiet: bool = False,
+) -> str | None:
+    try:
+        return client.live_session_status(live_session_id=live_session_id, timeout=timeout)
+    except httpx.HTTPError as exc:
+        if not quiet:
+            print(f"live session status unavailable: live_session_id={live_session_id} error={exc}")
+        return None
 
 
 if __name__ == "__main__":

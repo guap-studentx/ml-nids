@@ -84,23 +84,23 @@ class AgentApiClient:
         )
         response.raise_for_status()
 
-    def capture_status(self, *, capture_id: str) -> str:
+    def capture_status(self, *, capture_id: str, timeout: float | None = None) -> str:
         url = f"{self.backend_url}/api/v1/agents/{self.agent_id}/captures/{capture_id}/status"
         response = httpx.get(
             url,
             headers={"X-Agent-Token": self.token},
-            timeout=self.timeout,
+            timeout=self.timeout if timeout is None else timeout,
             trust_env=False,
         )
         response.raise_for_status()
         return response.json()["status"]
 
-    def live_session_status(self, *, live_session_id: str) -> str:
+    def live_session_status(self, *, live_session_id: str, timeout: float | None = None) -> str:
         url = f"{self.backend_url}/api/v1/agents/{self.agent_id}/live-sessions/{live_session_id}/status"
         response = httpx.get(
             url,
             headers={"X-Agent-Token": self.token},
-            timeout=self.timeout,
+            timeout=self.timeout if timeout is None else timeout,
             trust_env=False,
         )
         response.raise_for_status()

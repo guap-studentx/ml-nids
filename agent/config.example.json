@@ -3,6 +3,7 @@
   "agent_id": "00000000-0000-0000-0000-000000000000",
   "token": "paste-agent-token-here",
   "interval_seconds": 5,
+  "capture_mode": "pcap",
   "work_dir": ".livecap-agent",
   "keep_pcaps": false,
   "max_pcap_files": 100,

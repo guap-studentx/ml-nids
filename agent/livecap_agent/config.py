@@ -14,6 +14,7 @@ class AgentConfig:
     agent_id: uuid.UUID
     token: str
     interval_seconds: float
+    capture_mode: str
     work_dir: Path
     keep_pcaps: bool
     max_pcap_files: int
@@ -29,6 +30,7 @@ def parse_config(argv: list[str] | None = None) -> AgentConfig:
     parser.add_argument("--agent-id", default=None)
     parser.add_argument("--token", default=None)
     parser.add_argument("--interval", type=float, default=None)
+    parser.add_argument("--capture-mode", choices=["pcap", "flows"], default=None)
     parser.add_argument("--work-dir", default=None)
     parser.add_argument("--keep-pcaps", action="store_true", default=None, help="keep uploaded PCAP files in work-dir")
     parser.add_argument("--max-pcap-files", type=int, default=None)
@@ -41,6 +43,7 @@ def parse_config(argv: list[str] | None = None) -> AgentConfig:
     agent_id_value = _coalesce(args.agent_id, file_config.get("agent_id"), os.getenv("ML_NIDS_AGENT_ID"))
     token = _coalesce(args.token, file_config.get("token"), os.getenv("ML_NIDS_AGENT_TOKEN"))
     interval = float(_coalesce(args.interval, file_config.get("interval_seconds"), os.getenv("ML_NIDS_AGENT_INTERVAL"), 10))
+    capture_mode = _coalesce(args.capture_mode, file_config.get("capture_mode"), os.getenv("ML_NIDS_AGENT_CAPTURE_MODE"), "pcap")
     work_dir = _coalesce(args.work_dir, file_config.get("work_dir"), os.getenv("ML_NIDS_AGENT_WORK_DIR"), ".livecap-agent")
     keep_pcaps = _optional_bool(_coalesce(args.keep_pcaps, file_config.get("keep_pcaps"), os.getenv("ML_NIDS_AGENT_KEEP_PCAPS"), False))
     max_pcap_files = int(_coalesce(args.max_pcap_files, file_config.get("max_pcap_files"), os.getenv("ML_NIDS_AGENT_MAX_PCAP_FILES"), 100))
@@ -59,6 +62,8 @@ def parse_config(argv: list[str] | None = None) -> AgentConfig:
         parser.error("--token, config token, or ML_NIDS_AGENT_TOKEN is required")
     if interval <= 0:
         parser.error("--interval must be greater than 0")
+    if capture_mode not in {"pcap", "flows"}:
+        parser.error("--capture-mode must be either 'pcap' or 'flows'")
     if max_pcap_files < 0:
         parser.error("--max-pcap-files must be greater than or equal to 0")
     if pcap_retention_hours <= 0:
@@ -75,6 +80,7 @@ def parse_config(argv: list[str] | None = None) -> AgentConfig:
         agent_id=agent_id,
         token=token,
         interval_seconds=interval,
+        capture_mode=capture_mode,
         work_dir=Path(work_dir),
         keep_pcaps=keep_pcaps,
         max_pcap_files=max_pcap_files,
@@ -120,6 +126,7 @@ def _write_config(path: Path, config: AgentConfig) -> None:
         "agent_id": str(config.agent_id),
         "token": config.token,
         "interval_seconds": config.interval_seconds,
+        "capture_mode": config.capture_mode,
         "work_dir": str(config.work_dir),
         "keep_pcaps": config.keep_pcaps,
         "max_pcap_files": config.max_pcap_files,

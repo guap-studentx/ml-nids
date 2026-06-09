@@ -1,21 +1,23 @@
-# [ML-NIDS] livecap-agent
+# livecap-agent
 
 `livecap-agent` — хостовый агент ML-NIDS для захвата трафика. Его нужно
-запускать на физическом хосте или виртуальной машине, где интересующие вас сетевые интерфейсы. (*Запускается без докер-контейнера*). Установите менеджер окружения [**UV**](https://docs.astral.sh/uv/#installation) для работы с Python-проектами.
+запускать на машине или виртуальной машине, где видны нужные сетевые
+интерфейсы. В Docker агент не запускается.
 
 ## Запуск
 
 Сначала создайте агента в web-интерфейсе на странице `Agents`. После создания
-**сохраните** `id` и **одноразовый token**.
+сохраните `id` и одноразовый token.
 
 ```powershell
-uv run --project agent livecap-agent --backend-url http://localhost:8000 --agent-id <agent-id> --token <token>
+uv run --project agent livecap-agent --agent-id <agent-id> --token <token>
 ```
 
-Дополнительная команда, если backend на одном хосте с агентом:
+Полезные варианты:
 
 ```powershell
 uv run --project agent livecap-agent --agent-id <agent-id> --token <token> --once
+uv run --project agent livecap-agent --backend-url http://localhost:8000 --agent-id <agent-id> --token <token> --interval 5
 ```
 
 ## Конфигурационный файл
@@ -41,6 +43,7 @@ uv run --project agent livecap-agent --config agent/config.json
   "agent_id": "<agent-id>",
   "token": "<token>",
   "interval_seconds": 5,
+  "capture_mode": "pcap",
   "work_dir": ".livecap-agent",
   "keep_pcaps": false,
   "max_pcap_files": 100,
@@ -48,12 +51,44 @@ uv run --project agent livecap-agent --config agent/config.json
 }
 ```
 
-CLI-аргументы имеют приоритет над значениями из файла. `agent/config.json`.
+CLI-аргументы имеют приоритет над значениями из файла. `agent/config.json`
+игнорируется git, так как содержит agent token.
 
-## Хранение PCAP
+## Режим захвата
 
-По умолчанию агент удаляет PCAP после успешной загрузки в backend. Для отладки
-можно включить:
+Параметр `capture_mode` управляет тем, что агент отправляет в backend:
+
+- `pcap` — режим по умолчанию. Агент пишет PCAP/PCAPNG внешним инструментом
+  `dumpcap`, `tshark` или `tcpdump`, а backend извлекает flows через NFStream.
+- `flows` — агент использует NFStream напрямую на сетевом интерфейсе и
+  отправляет в backend CSV с flow-признаками. Промежуточный PCAP-файл в этом
+  режиме не создаётся.
+
+Режим можно выбрать в конфиге:
+
+```json
+"capture_mode": "flows"
+```
+
+или через CLI:
+
+```powershell
+uv run --project agent livecap-agent --config agent/config.json --capture-mode flows
+```
+
+В режиме `flows` на машине агента должны быть доступны зависимости NFStream.
+В этом режиме chunk завершается по таймеру агента, а NFStream отдаёт только
+истёкшие flows. Для длинных активных соединений возможна нарезка по
+`active_timeout`.
+
+Практически режим `flows` рекомендуется запускать на Linux-сенсоре. На Windows
+NFStream может требовать дополнительные native-библиотеки, поэтому для Windows
+остаётся предпочтительным режим `pcap` через Wireshark `dumpcap`.
+
+## Хранение PCAP/CSV
+
+По умолчанию агент удаляет локальный PCAP или CSV после успешной загрузки в
+backend. Для отладки можно включить:
 
 ```json
 "keep_pcaps": true

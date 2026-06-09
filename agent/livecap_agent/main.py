@@ -7,6 +7,7 @@ import httpx
 from livecap_agent.capture import capture_pcap
 from livecap_agent.client import AgentApiClient
 from livecap_agent.config import parse_config
+from livecap_agent.flows import capture_flows_csv
 from livecap_agent.interfaces import list_interfaces
 from livecap_agent.metadata import collect_metadata
 from livecap_agent.storage import cleanup_pcap_files, remove_file_quietly
@@ -27,7 +28,10 @@ def main() -> None:
         max_files=config.max_pcap_files,
         max_age_hours=config.pcap_retention_hours,
     )
-    print(f"livecap-agent started: backend={config.backend_url} agent_id={config.agent_id}")
+    print(
+        "livecap-agent started: "
+        f"backend={config.backend_url} agent_id={config.agent_id} capture_mode={config.capture_mode}"
+    )
 
     while True:
         try:
@@ -60,20 +64,25 @@ def handle_command(client: AgentApiClient, config, command: dict) -> None:
         return
 
     capture_id = command["capture_id"]
-    output_path = config.work_dir / f"{capture_id}.pcap"
+    output_path = config.work_dir / f"{capture_id}.{_capture_extension(config.capture_mode)}"
     print(
         "capture command: "
-        f"capture_id={capture_id} iface={command['iface']} duration={command['duration_seconds']}s"
+        f"capture_id={capture_id} iface={command['iface']} "
+        f"duration={command['duration_seconds']}s mode={config.capture_mode}"
     )
     try:
-        capture_pcap(
+        _capture_window(
+            mode=config.capture_mode,
             iface=command["iface"],
             duration_seconds=command["duration_seconds"],
             output_path=output_path,
             bpf_filter=command.get("bpf_filter"),
             should_stop=_capture_should_stop(client, capture_id=capture_id),
         )
-        client.upload_pcap(capture_id=capture_id, pcap_path=output_path)
+        if config.capture_mode == "flows":
+            client.upload_capture_flows(capture_id=capture_id, csv_path=output_path)
+        else:
+            client.upload_pcap(capture_id=capture_id, pcap_path=output_path)
         print(f"capture uploaded: capture_id={capture_id} file={output_path}")
         if not config.keep_pcaps:
             remove_file_quietly(output_path)
@@ -106,12 +115,17 @@ def handle_live_session_command(client: AgentApiClient, config, command: dict) -
                 break
 
             current_chunk_seconds = min(chunk_seconds, remaining)
-            output_path = config.work_dir / f"{live_session_id}_chunk_{chunk_index:04d}.pcap"
+            output_path = (
+                config.work_dir
+                / f"{live_session_id}_chunk_{chunk_index:04d}.{_capture_extension(config.capture_mode)}"
+            )
             print(
                 "live chunk capture: "
-                f"live_session_id={live_session_id} chunk={chunk_index} duration={current_chunk_seconds}s"
+                f"live_session_id={live_session_id} chunk={chunk_index} "
+                f"duration={current_chunk_seconds}s mode={config.capture_mode}"
             )
-            capture_pcap(
+            _capture_window(
+                mode=config.capture_mode,
                 iface=command["iface"],
                 duration_seconds=current_chunk_seconds,
                 output_path=output_path,
@@ -121,7 +135,10 @@ def handle_live_session_command(client: AgentApiClient, config, command: dict) -
             status = _live_session_status(client, live_session_id=live_session_id)
             if status in {"stopped", "failed", "completed"}:
                 break
-            client.upload_live_session_chunk(live_session_id=live_session_id, pcap_path=output_path)
+            if config.capture_mode == "flows":
+                client.upload_live_session_flows_chunk(live_session_id=live_session_id, csv_path=output_path)
+            else:
+                client.upload_live_session_chunk(live_session_id=live_session_id, pcap_path=output_path)
             print(f"live chunk uploaded: live_session_id={live_session_id} chunk={chunk_index} file={output_path}")
             if not config.keep_pcaps:
                 remove_file_quietly(output_path)
@@ -146,6 +163,38 @@ def handle_live_session_command(client: AgentApiClient, config, command: dict) -
             return
         print(f"live session failed: live_session_id={live_session_id} error={message}")
         client.fail_live_session(live_session_id=live_session_id, error_message=message)
+
+
+def _capture_window(
+    *,
+    mode: str,
+    iface: str,
+    duration_seconds: int,
+    output_path,
+    bpf_filter: str | None,
+    should_stop,
+) -> None:
+    if mode == "flows":
+        capture_flows_csv(
+            iface=iface,
+            duration_seconds=duration_seconds,
+            output_path=output_path,
+            bpf_filter=bpf_filter,
+            should_stop=should_stop,
+        )
+        return
+
+    capture_pcap(
+        iface=iface,
+        duration_seconds=duration_seconds,
+        output_path=output_path,
+        bpf_filter=bpf_filter,
+        should_stop=should_stop,
+    )
+
+
+def _capture_extension(mode: str) -> str:
+    return "csv" if mode == "flows" else "pcap"
 
 
 def _capture_should_stop(client: AgentApiClient, *, capture_id: str):

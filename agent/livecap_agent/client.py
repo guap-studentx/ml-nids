@@ -49,6 +49,19 @@ class AgentApiClient:
         response.raise_for_status()
         return response.json()
 
+    def upload_capture_flows(self, *, capture_id: str, csv_path: Path) -> dict:
+        url = f"{self.backend_url}/api/v1/agents/{self.agent_id}/captures/{capture_id}/flows"
+        with csv_path.open("rb") as file_obj:
+            response = httpx.post(
+                url,
+                headers={"X-Agent-Token": self.token},
+                files={"file": (csv_path.name, file_obj, "text/csv")},
+                timeout=None,
+                trust_env=False,
+            )
+        response.raise_for_status()
+        return response.json()
+
     def upload_live_session_chunk(self, *, live_session_id: str, pcap_path: Path) -> dict:
         url = f"{self.backend_url}/api/v1/agents/{self.agent_id}/live-sessions/{live_session_id}/chunks"
         with pcap_path.open("rb") as file_obj:
@@ -56,6 +69,19 @@ class AgentApiClient:
                 url,
                 headers={"X-Agent-Token": self.token},
                 files={"file": (pcap_path.name, file_obj, "application/vnd.tcpdump.pcap")},
+                timeout=None,
+                trust_env=False,
+            )
+        response.raise_for_status()
+        return response.json()
+
+    def upload_live_session_flows_chunk(self, *, live_session_id: str, csv_path: Path) -> dict:
+        url = f"{self.backend_url}/api/v1/agents/{self.agent_id}/live-sessions/{live_session_id}/chunks/flows"
+        with csv_path.open("rb") as file_obj:
+            response = httpx.post(
+                url,
+                headers={"X-Agent-Token": self.token},
+                files={"file": (csv_path.name, file_obj, "text/csv")},
                 timeout=None,
                 trust_env=False,
             )

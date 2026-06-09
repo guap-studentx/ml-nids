@@ -33,7 +33,7 @@ from app.schemas.agent import (
 from app.services.capture_service import CaptureService
 from app.services.agent_service import AgentService
 from app.services.live_session_service import LiveSessionService
-from app.api.v1.captures import process_uploaded_pcap, save_upload
+from app.api.v1.captures import process_uploaded_csv, process_uploaded_pcap, save_upload
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
@@ -172,6 +172,33 @@ async def upload_agent_capture_pcap(
     return AgentHeartbeatResponse(agent_id=agent.id, status=agent.status or "online", last_seen_at=agent.last_seen_at)
 
 
+@router.post("/{agent_id}/captures/{capture_id}/flows", response_model=AgentHeartbeatResponse, status_code=status.HTTP_202_ACCEPTED)
+async def upload_agent_capture_flows(
+    agent_id: uuid.UUID,
+    capture_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    agent_service: Annotated[AgentService, Depends(get_agent_service)],
+    capture_service: Annotated[CaptureService, Depends(get_capture_service)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    file: Annotated[UploadFile, File()],
+    agent_token: Annotated[str | None, Header(alias="X-Agent-Token")] = None,
+) -> AgentHeartbeatResponse:
+    if not agent_token:
+        raise AuthError()
+    agent = await agent_service.authenticate(agent_id, token=agent_token)
+    capture = await capture_service.ensure_agent_capture(agent_id=agent_id, capture_id=capture_id)
+
+    settings = get_settings()
+    settings.uploads_dir.mkdir(parents=True, exist_ok=True)
+    safe_filename = Path(file.filename or "live_flows.csv").name
+    upload_path = settings.uploads_dir / f"{capture.id}_{safe_filename}"
+    await save_upload(file, upload_path)
+    await session.commit()
+
+    background_tasks.add_task(process_uploaded_csv, capture.id, str(upload_path))
+    return AgentHeartbeatResponse(agent_id=agent.id, status=agent.status or "online", last_seen_at=agent.last_seen_at)
+
+
 @router.get("/{agent_id}/captures/{capture_id}/status", response_model=AgentCaptureStatusResponse)
 async def get_agent_capture_status(
     agent_id: uuid.UUID,
@@ -283,6 +310,43 @@ async def upload_agent_live_session_chunk(
     await session.commit()
 
     background_tasks.add_task(process_uploaded_pcap, capture.id, str(upload_path))
+    return AgentHeartbeatResponse(agent_id=agent.id, status=agent.status or "online", last_seen_at=agent.last_seen_at)
+
+
+@router.post(
+    "/{agent_id}/live-sessions/{live_session_id}/chunks/flows",
+    response_model=AgentHeartbeatResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def upload_agent_live_session_flows_chunk(
+    agent_id: uuid.UUID,
+    live_session_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    agent_service: Annotated[AgentService, Depends(get_agent_service)],
+    live_session_service: Annotated[LiveSessionService, Depends(get_live_session_service)],
+    captures: Annotated[CaptureSessionRepository, Depends(get_capture_session_repository)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    file: Annotated[UploadFile, File()],
+    agent_token: Annotated[str | None, Header(alias="X-Agent-Token")] = None,
+) -> AgentHeartbeatResponse:
+    if not agent_token:
+        raise AuthError()
+    agent = await agent_service.authenticate(agent_id, token=agent_token)
+
+    settings = get_settings()
+    settings.uploads_dir.mkdir(parents=True, exist_ok=True)
+    safe_filename = Path(file.filename or "live_chunk_flows.csv").name
+    capture = await live_session_service.create_chunk_capture(
+        captures=captures,
+        agent_id=agent_id,
+        live_session_id=live_session_id,
+        source_filename=safe_filename,
+    )
+    upload_path = settings.uploads_dir / f"{capture.id}_{safe_filename}"
+    await save_upload(file, upload_path)
+    await session.commit()
+
+    background_tasks.add_task(process_uploaded_csv, capture.id, str(upload_path))
     return AgentHeartbeatResponse(agent_id=agent.id, status=agent.status or "online", last_seen_at=agent.last_seen_at)
 
 

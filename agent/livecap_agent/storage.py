@@ -16,7 +16,12 @@ def cleanup_pcap_files(work_dir: Path, *, max_files: int, max_age_hours: float) 
         return
 
     pcaps = sorted(
-        [path for path in work_dir.glob("*.pcap") if path.is_file()],
+        [
+            path
+            for pattern in ("*.pcap", "*.csv")
+            for path in work_dir.glob(pattern)
+            if path.is_file()
+        ],
         key=lambda path: path.stat().st_mtime,
         reverse=True,
     )

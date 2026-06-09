@@ -8,6 +8,7 @@ from app.inference.postfilter import apply_postfilter
 from app.exceptions import ModelNotFoundError
 from app.repositories.capture_session_repository import CaptureSessionRepository
 from app.repositories.flow_repository import FlowRepository
+from app.repositories.live_session_repository import LiveSessionRepository
 from app.repositories.model_repository import ModelRepository
 from app.services.flow_storage_service import FlowStorageService
 from app.services.inference_service import InferenceService
@@ -23,6 +24,7 @@ class OfflineCsvService:
     ):
         self.session = session
         self.captures = CaptureSessionRepository(session)
+        self.live_sessions = LiveSessionRepository(session)
         self.models = ModelRepository(session)
         self.flow_storage = FlowStorageService(FlowRepository(session), captures_dir)
         self.inference = InferenceService(models_dir)
@@ -48,6 +50,15 @@ class OfflineCsvService:
                 flows_total=int(len(results)),
                 flows_anomaly=int(results["prediction"].sum()),
             )
+            if capture.live_session_id is not None:
+                flows_total, flows_anomaly = await self.captures.aggregate_live_session(capture.live_session_id)
+                live_session = await self.live_sessions.get(capture.live_session_id)
+                if live_session is not None:
+                    await self.live_sessions.update_aggregates(
+                        live_session,
+                        flows_total=flows_total,
+                        flows_anomaly=flows_anomaly,
+                    )
             await self.session.commit()
         except Exception as exc:
             await self.session.rollback()
